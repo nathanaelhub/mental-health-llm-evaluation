@@ -7,7 +7,7 @@
 [![Code Style: Black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
 
 **MSAI 5583 Capstone Project | Lipscomb University**  
-**Author:** Nathan Johnson  
+**Author:** Nathanael Johnson  
 **Supervisor:** Dr. Steve Nordstrom  
 **Academic Year:** 2024-2025
 
