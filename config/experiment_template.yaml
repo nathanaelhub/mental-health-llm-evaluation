@@ -1,0 +1,184 @@
+# Mental Health LLM Evaluation - Configuration Template
+# This template demonstrates the new flexible model configuration system
+
+experiment:
+  name: "Mental Health LLM Evaluation"
+  description: "Comprehensive evaluation of LLMs in mental health applications"
+  version: "2.0.0"
+  allow_partial_models: false  # Allow experiment to run even if some models fail to load
+
+# New flexible model configuration structure
+models:
+  # Cloud-based models
+  cloud:
+    - name: "gpt-4"
+      provider: "openai"
+      enabled: true
+      model: "gpt-4-turbo-preview"
+      temperature: 0.7
+      max_tokens: 1000
+      timeout: 30.0
+      
+    - name: "claude-3"
+      provider: "anthropic"
+      enabled: false  # Set to true when ready to use
+      model: "claude-3-opus-20240229"
+      max_tokens: 1000
+      temperature: 0.7
+      timeout: 30.0
+      
+    - name: "claude-3-sonnet"
+      provider: "anthropic"
+      enabled: false
+      model: "claude-3-sonnet-20240229"
+      max_tokens: 1000
+      temperature: 0.7
+      timeout: 30.0
+      
+    - name: "claude-3-haiku"
+      provider: "anthropic"
+      enabled: false
+      model: "claude-3-haiku-20240307"
+      max_tokens: 1000
+      temperature: 0.7
+      timeout: 30.0
+      
+    - name: "gemini-pro"
+      provider: "google"
+      enabled: false  # Placeholder for future Google integration
+      model: "gemini-pro"
+      max_tokens: 1000
+      temperature: 0.7
+      
+  # Local models
+  local:
+    - name: "deepseek"
+      provider: "deepseek"
+      enabled: true
+      model_path: "./models/deepseek-llm-7b-chat"
+      device: "auto"
+      temperature: 0.7
+      max_new_tokens: 1000
+      use_api: false
+      
+    - name: "llama-2-7b"
+      provider: "meta"
+      enabled: false  # Set to true when model is downloaded
+      model_path: "./models/llama-2-7b-chat"
+      device: "auto"
+      precision: "fp16"
+      temperature: 0.7
+      max_tokens: 1000
+      load_in_8bit: false
+      
+    - name: "llama-2-13b"
+      provider: "meta"
+      enabled: false
+      model_path: "./models/llama-2-13b-chat"
+      device: "auto"
+      precision: "fp16"
+      temperature: 0.7
+      max_tokens: 1000
+      load_in_8bit: true  # Enable 8-bit quantization for larger model
+      
+    - name: "mistral"
+      provider: "mistral"
+      enabled: false  # Placeholder for future Mistral integration
+      model_path: "./models/mistral-7b-instruct"
+      device: "auto"
+      precision: "fp16"
+      temperature: 0.7
+      max_tokens: 1000
+
+# Scenario configuration
+scenarios:
+  directory: "data/scenarios"
+  include: []  # Empty means all scenarios, or specify: ["anxiety_mild", "depression_moderate"]
+  category: []  # Empty means all categories, or filter by: ["anxiety", "depression", "trauma"]
+  severity: []  # Empty means all severities, or filter by: ["mild", "moderate", "severe"]
+
+# Evaluation configuration
+evaluation:
+  conversations_per_scenario: 10
+  max_conversation_turns: 20
+  max_concurrent: 3
+  timeout_seconds: 300
+  enable_safety_monitoring: true
+  enable_metrics_collection: true
+  
+  # Evaluation frameworks configuration
+  empathy:
+    enabled: true
+    weights:
+      emotional_recognition: 0.3
+      perspective_taking: 0.3
+      compassionate_response: 0.4
+      
+  safety:
+    enabled: true
+    crisis_detection: true
+    harmful_content_detection: true
+    
+  coherence:
+    enabled: true
+    context_awareness: true
+    logical_consistency: true
+    
+  therapeutic:
+    enabled: true
+    technique_recognition: true
+    boundary_maintenance: true
+    
+  composite:
+    enabled: true
+    weights:
+      empathy: 0.3
+      safety: 0.4
+      coherence: 0.3
+
+# Output configuration
+output:
+  base_directory: "./experiments"
+  conversations: "conversations"
+  evaluations: "evaluations"
+  results: "results"
+  reports: "reports"
+
+# Analysis configuration
+analysis:
+  statistical_tests:
+    - "anova"
+    - "t_test"
+    - "effect_size"
+  
+  visualizations:
+    - "box_plots"
+    - "heatmaps"
+    - "radar_charts"
+    - "scatter_plots"
+    - "model_comparison"
+  
+  export_formats:
+    - "png"
+    - "pdf"
+    - "svg"
+
+# Report generation configuration
+reports:
+  formats:
+    - "html"
+    - "pdf"
+    - "markdown"
+  
+  include_sections:
+    - "executive_summary"
+    - "methodology"
+    - "results"
+    - "statistical_analysis"
+    - "model_comparison"
+    - "safety_analysis"
+    - "recommendations"
+    - "limitations"
+    - "conclusions"
+  
+  template: "academic"  # or "clinical", "executive"
