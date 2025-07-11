@@ -1,22 +1,12 @@
 """
-Evaluation framework for mental health LLM comparison.
+Evaluation components for mental health LLM assessment.
 
-This module provides comprehensive evaluation metrics for comparing
-local vs cloud-based LLMs in therapeutic conversation contexts.
+This package contains evaluation metrics and scoring systems for
+assessing therapeutic quality, safety, and effectiveness.
 """
 
-from .technical_metrics import TechnicalMetrics, TechnicalScore
-from .therapeutic_metrics import TherapeuticMetrics, TherapeuticScore
-from .patient_experience import PatientExperience, PatientScore
-from .composite_scorer import CompositeScorer, CompositeScore
+from .mental_health_evaluator import MentalHealthEvaluator
+from .evaluation_metrics import EvaluationMetrics
+# from .composite_scorer import CompositeScorer
 
-__all__ = [
-    "TechnicalMetrics",
-    "TechnicalScore", 
-    "TherapeuticMetrics",
-    "TherapeuticScore",
-    "PatientExperience",
-    "PatientScore",
-    "CompositeScorer",
-    "CompositeScore",
-]
+__all__ = ['MentalHealthEvaluator', 'EvaluationMetrics']

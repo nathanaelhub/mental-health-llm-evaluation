@@ -16,7 +16,7 @@ import pandas as pd
 import numpy as np
 import logging
 
-from ..evaluation.composite_scorer import CompositeScore
+# from ..evaluation.composite_scorer import CompositeScore
 from .statistical_analysis import StatisticalResults
 
 logger = logging.getLogger(__name__)
@@ -61,7 +61,7 @@ class ResultsVisualizer:
     
     def create_comprehensive_dashboard(
         self,
-        results: Dict[str, List[CompositeScore]],
+        results: Dict[str, List[Dict[str, Any]]],
         statistical_results: Optional[StatisticalResults] = None,
         output_dir: str = "./visualizations"
     ) -> Dict[str, str]:
@@ -132,7 +132,7 @@ class ResultsVisualizer:
     
     def create_overall_comparison(
         self,
-        results: Dict[str, List[CompositeScore]],
+        results: Dict[str, List[Dict[str, Any]]],
         output_dir: str
     ) -> Optional[str]:
         """Create overall model comparison chart."""
@@ -191,7 +191,7 @@ class ResultsVisualizer:
     
     def create_score_distributions(
         self,
-        results: Dict[str, List[CompositeScore]],
+        results: Dict[str, List[Dict[str, Any]]],
         output_dir: str
     ) -> Optional[str]:
         """Create score distribution plots."""
@@ -243,7 +243,7 @@ class ResultsVisualizer:
     
     def create_radar_charts(
         self,
-        results: Dict[str, List[CompositeScore]],
+        results: Dict[str, List[Dict[str, Any]]],
         output_dir: str
     ) -> Optional[str]:
         """Create radar charts for model comparison."""
@@ -305,7 +305,7 @@ class ResultsVisualizer:
     
     def create_technical_metrics_plot(
         self,
-        results: Dict[str, List[CompositeScore]],
+        results: Dict[str, List[Dict[str, Any]]],
         output_dir: str
     ) -> Optional[str]:
         """Create technical metrics comparison plot."""
@@ -369,7 +369,7 @@ class ResultsVisualizer:
     
     def create_therapeutic_heatmap(
         self,
-        results: Dict[str, List[CompositeScore]],
+        results: Dict[str, List[Dict[str, Any]]],
         output_dir: str
     ) -> Optional[str]:
         """Create therapeutic quality heatmap."""
@@ -414,7 +414,7 @@ class ResultsVisualizer:
     
     def create_patient_experience_plot(
         self,
-        results: Dict[str, List[CompositeScore]],
+        results: Dict[str, List[Dict[str, Any]]],
         output_dir: str
     ) -> Optional[str]:
         """Create patient experience comparison plot."""
@@ -541,7 +541,7 @@ class ResultsVisualizer:
     
     def create_interactive_dashboard(
         self,
-        results: Dict[str, List[CompositeScore]],
+        results: Dict[str, List[Dict[str, Any]]],
         output_dir: str
     ) -> Optional[str]:
         """Create interactive dashboard using Plotly."""

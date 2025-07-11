@@ -1,16 +1,11 @@
 """
-Utility functions and helpers for mental health LLM evaluation.
+Utility functions for the mental health LLM evaluation framework.
 
-This module provides common utilities including logging configuration,
-data storage, and other helper functions.
+This package contains common utilities for logging, data storage,
+and other shared functionality.
 """
 
-from .logging_config import setup_logging, get_logger
-from .data_storage import DataStorage, EvaluationDataManager
+from .data_storage import DataStorage
+from .logging_config import setup_logging
 
-__all__ = [
-    "setup_logging",
-    "get_logger", 
-    "DataStorage",
-    "EvaluationDataManager",
-]
+__all__ = ['DataStorage', 'setup_logging']

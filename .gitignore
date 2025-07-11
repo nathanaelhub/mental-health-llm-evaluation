@@ -197,4 +197,18 @@ Dockerfile.dev
 node_modules/
 npm-debug.log*
 yarn-debug.log*
-yarn-error.log*
+yarn-error.log*.env
+
+# Project cleanup archives
+_archive/
+*.backup
+src_backup_*.tar.gz
+
+# Tools output
+tools/output/
+tools/results/
+
+# Test artifacts
+test_*.log
+validate_cleanup.py
+

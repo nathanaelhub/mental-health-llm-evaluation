@@ -9,21 +9,23 @@ __version__ = "1.0.0"
 __author__ = "Mental Health LLM Research Team"
 __email__ = "contact@mental-health-llm.org"
 
-from .models import OpenAIClient, DeepSeekClient, BaseModel
-from .evaluation import CompositeScorer, TechnicalMetrics, TherapeuticMetrics
-from .scenarios import ConversationGenerator, ScenarioLoader
+from .models import OpenAIClient, ClaudeClient, DeepSeekClient, GemmaClient, BaseModel, LocalLLMClient
+from .evaluation import MentalHealthEvaluator, EvaluationMetrics
+from .scenarios import ScenarioLoader, ConversationGenerator
 from .analysis import StatisticalAnalyzer, ResultsVisualizer
 from .utils import setup_logging, DataStorage
 
 __all__ = [
     "OpenAIClient",
-    "DeepSeekClient", 
+    "ClaudeClient",
+    "DeepSeekClient",
+    "GemmaClient",
     "BaseModel",
-    "CompositeScorer",
-    "TechnicalMetrics",
-    "TherapeuticMetrics",
-    "ConversationGenerator",
+    "LocalLLMClient",
+    "MentalHealthEvaluator",
+    "EvaluationMetrics",
     "ScenarioLoader",
+    "ConversationGenerator",
     "StatisticalAnalyzer",
     "ResultsVisualizer",
     "setup_logging",

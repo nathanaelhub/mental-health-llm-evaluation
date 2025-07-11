@@ -74,7 +74,11 @@ class ConfigLoader:
             if config_file:
                 config_path = Path(config_file)
             else:
-                config_path = self.config_dir / f"{environment}.yaml"
+                # Look for environment-specific config in environments subfolder
+                config_path = self.config_dir / "environments" / f"{environment}.yaml"
+                if not config_path.exists():
+                    # Fallback to old location
+                    config_path = self.config_dir / f"{environment}.yaml"
             
             if not config_path.exists():
                 raise FileNotFoundError(f"Configuration file not found: {config_path}")
