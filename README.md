@@ -36,18 +36,30 @@ This capstone project provides a streamlined evaluation framework for comparing 
 
 ```
 mental-health-llm-evaluation/
-├── README.md                     # Main project documentation
-├── requirements.txt              # Full dependencies (pandas, scipy, matplotlib)
-├── requirements_minimal.txt      # Minimal dependencies (openai, pyyaml)
-├── .env.example                  # Environment template
-├── run_research.py              # Main research runner
-├── mental_health_evaluator.py   # Core evaluation engine
-├── evaluation_metrics.py       # Therapeutic quality scoring
-├── statistical_analysis.py     # Statistical comparison framework
-├── visualization.py             # Publication-quality charts
-├── openai_client.py             # OpenAI GPT-4 interface
-├── deepseek_client.py           # Local DeepSeek interface (mock for testing)
-├── conversation_generator.py    # Conversation generation
+├── src/                          # Source code
+│   ├── analysis/                 # Statistical analysis and visualization
+│   ├── config/                   # Configuration management
+│   ├── evaluation/               # Evaluation metrics and logic
+│   ├── models/                   # Model interfaces and clients
+│   ├── scenarios/                # Scenario loading and management
+│   └── utils/                    # Utility functions and helpers
+├── data/                         # Static input data
+│   └── scenarios/                # Scenario JSON files
+├── output/                       # Generated output files
+│   ├── conversations/            # Generated conversation logs
+│   ├── evaluations/              # Evaluation results
+│   ├── analysis/                 # Statistical analysis results
+│   ├── visualizations/           # Charts and graphs
+│   └── logs/                     # Application logs
+├── config/                       # Configuration files
+│   ├── models/                   # Model-specific configurations
+│   └── scenarios/                # Scenario YAML configurations
+├── scripts/                      # Utility scripts
+│   ├── run_research.py           # Main research runner
+│   ├── compare_models.py         # Model comparison utility
+│   └── run_conversation_generation.py  # Conversation generation
+├── docs/                         # Documentation
+└── PROJECT_STRUCTURE.md          # Detailed structure documentation
 ├── compare_models.py            # Model comparison utilities
 ├── quick_comparison.py         # Quick testing tool
 ├── claude_usage_monitor.py     # Usage tracking
@@ -75,8 +87,9 @@ mental-health-llm-evaluation/
 
 **Models Currently Supported**:
 - **OpenAI GPT-4** (via API) - Fully integrated and tested
-- **DeepSeek R1** (local) - Interface ready, mock implementation for testing
-- **Planned additions**: Claude 3, Gemini Pro, Llama 3 (future expansion)
+- **Anthropic Claude** (via API) - Production ready with thinking tag cleanup
+- **DeepSeek R1** (via LM Studio) - Local model with session management
+- **Gemma** (via LM Studio) - Local model alternative
 
 **NEW: Therapeutic Effectiveness Scoring**:
 - **4-dimension evaluation system** with weighted scoring:
@@ -241,7 +254,6 @@ python quick_comparison.py --interactive
 ## 🔮 Future Expansion Plans
 
 **Additional Models** (architecture ready):
-- **Claude 3** (Anthropic) - Advanced reasoning capabilities
 - **Gemini Pro** (Google) - Multimodal support
 - **Llama 3** (Meta) - Open-source alternative
 - **Local alternatives** - Mistral, Qwen, etc.

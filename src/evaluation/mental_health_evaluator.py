@@ -382,12 +382,12 @@ class MentalHealthEvaluator:
                   f"{deepseek_eval.composite_score:.2f}<8")
             print()
     
-    def save_results(self, output_dir: str = "data/results") -> Dict[str, str]:
+    def save_results(self, results_dir: str = "results/evaluations") -> Dict[str, str]:
         """
         Save results to JSON and CSV files
         
         Args:
-            output_dir: Directory to save results
+            results_dir: Directory to save results
             
         Returns:
             Dictionary with file paths
@@ -397,12 +397,12 @@ class MentalHealthEvaluator:
             return {}
         
         # Create output directory
-        os.makedirs(output_dir, exist_ok=True)
+        os.makedirs(results_dir, exist_ok=True)
         
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
         
         # Save detailed JSON results
-        json_file = os.path.join(output_dir, f"evaluation_results_{timestamp}.json")
+        json_file = os.path.join(results_dir, f"evaluation_results_{timestamp}.json")
         json_data = {
             "summary": asdict(self.summary) if self.summary else None,
             "scenarios": []
@@ -428,7 +428,7 @@ class MentalHealthEvaluator:
             json.dump(json_data, f, indent=2)
         
         # Save CSV summary
-        csv_file = os.path.join(output_dir, f"evaluation_summary_{timestamp}.csv")
+        csv_file = os.path.join(results_dir, f"evaluation_summary_{timestamp}.csv")
         with open(csv_file, 'w', newline='') as f:
             writer = csv.writer(f)
             

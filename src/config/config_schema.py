@@ -414,10 +414,11 @@ class StorageConfig:
 @dataclass
 class OutputConfig:
     """Output configuration."""
-    base_dir: str = "./output"
-    results_dir: str = "./output/results"
-    visualizations_dir: str = "./output/visualizations"
-    reports_dir: str = "./output/reports"
+    base_dir: str = "./results"
+    evaluations_dir: str = "./results/evaluations"
+    reports_dir: str = "./results/reports"
+    statistics_dir: str = "./results/statistics"
+    visualizations_dir: str = "./results/visualizations"
     
     # File naming
     timestamp_format: str = "%Y%m%d_%H%M%S"
@@ -500,10 +501,10 @@ def validate_config(config_dict: Dict[str, Any]) -> ConfigSchema:
             statistical=StatisticalConfig(**config_dict.get("statistical", {})),
             logging=LoggingConfig(**config_dict.get("logging", {})),
             storage=StorageConfig(**config_dict.get("storage", {})),
-            output=OutputConfig(**config_dict.get("output", {})),
+            output=OutputConfig(**config_dict.get("results", {})),
             **{k: v for k, v in config_dict.items() if k not in [
                 "models", "evaluation", "experiment", "conversation", "scenario",
-                "statistical", "logging", "storage", "output"
+                "statistical", "logging", "storage", "results"
             ]}
         )
         

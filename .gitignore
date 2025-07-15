@@ -151,6 +151,10 @@ logs/
 *.log
 *.log.*
 
+# LM Studio logs
+lmstudio/
+*.lmstudio.log
+
 # Temporary files
 tmp/
 temp/
@@ -197,7 +201,7 @@ Dockerfile.dev
 node_modules/
 npm-debug.log*
 yarn-debug.log*
-yarn-error.log*.env
+yarn-error.log*
 
 # Project cleanup archives
 _archive/
@@ -210,5 +214,29 @@ tools/results/
 
 # Test artifacts
 test_*.log
-validate_cleanup.py
 
+
+
+# Clean structure ignores
+# Generated output data (avoid committing generated files)
+output/conversations/*.json
+output/evaluations/*.json
+output/analysis/*.json
+output/analysis/*.txt
+output/visualizations/*.png
+output/logs/*.log
+output/temp/
+
+# Keep directory structure but ignore contents
+!output/conversations/.gitkeep
+!output/evaluations/.gitkeep
+!output/analysis/.gitkeep
+!output/visualizations/.gitkeep
+!output/logs/.gitkeep
+
+# Legacy directories (from migration)
+results/
+generated/
+
+# Backup directories
+backup_*/

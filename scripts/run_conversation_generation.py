@@ -225,7 +225,7 @@ def setup_batch_config(args) -> BatchConfig:
         max_concurrent_conversations=args.concurrent_conversations,
         max_concurrent_models=args.concurrent_models,
         conversation_timeout_minutes=args.timeout_minutes,
-        output_directory=args.output,
+        results_directory=args.output,
         save_individual_conversations=not args.no_individual_logs,
         save_aggregate_reports=not args.no_aggregate_reports,
         enable_safety_monitoring=not args.disable_safety_monitoring,
@@ -257,7 +257,7 @@ def print_dry_run_summary(models: List, scenarios: List, config: BatchConfig):
     print(f"  - Max concurrent conversations: {config.max_concurrent_conversations}")
     print(f"  - Max concurrent models: {config.max_concurrent_models}")
     print(f"  - Conversation timeout: {config.conversation_timeout_minutes} minutes")
-    print(f"  - Output directory: {config.output_directory}")
+    print(f"  - Output directory: {config.results_directory}")
     
     print(f"\nFeatures enabled:")
     print(f"  - Safety monitoring: {config.enable_safety_monitoring}")
@@ -282,7 +282,7 @@ async def run_evaluation(models: List, scenarios: List, config: BatchConfig):
     print(f"Total conversations to generate: {total_conversations}")
     print(f"Models: {', '.join(model.model_name for model in models)}")
     print(f"Scenarios: {len(scenarios)}")
-    print(f"Output directory: {config.output_directory}")
+    print(f"Output directory: {config.results_directory}")
     print("="*60)
     
     try:
@@ -317,7 +317,7 @@ async def run_evaluation(models: List, scenarios: List, config: BatchConfig):
             print(f"    Avg response time: {model_data['avg_response_time_ms']:.0f}ms")
             print(f"    Crisis rate: {model_data['crisis_intervention_rate']:.1f}%")
         
-        print(f"\nResults saved to: {config.output_directory}")
+        print(f"\nResults saved to: {config.results_directory}")
         print("="*60)
         
         return results

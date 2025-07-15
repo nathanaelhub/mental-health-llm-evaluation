@@ -98,9 +98,9 @@ class ModelComparator:
     
     # OpenAI pricing per 1K tokens (as of 2024)
     OPENAI_PRICING = {
-        "gpt-4-turbo-preview": {"input": 0.01, "output": 0.03},
-        "gpt-4": {"input": 0.03, "output": 0.06},
-        "gpt-3.5-turbo": {"input": 0.0015, "output": 0.002},
+        "gpt-4-turbo-preview": {"input": 0.01, "results": 0.03},
+        "gpt-4": {"input": 0.03, "results": 0.06},
+        "gpt-3.5-turbo": {"input": 0.0015, "results": 0.002},
     }
     
     # Model name mappings for cleaner display
@@ -307,7 +307,7 @@ class ModelComparator:
         
         pricing = self.OPENAI_PRICING[model]
         input_cost = (input_tokens / 1000) * pricing["input"]
-        output_cost = (output_tokens / 1000) * pricing["output"]
+        output_cost = (output_tokens / 1000) * pricing["results"]
         
         return input_cost + output_cost
     

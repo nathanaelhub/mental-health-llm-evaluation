@@ -2,6 +2,32 @@
 # =====================================================
 # Comprehensive configuration for capstone research project
 
+# Project Paths Configuration
+paths:
+  # Base directories
+  project_root: "."
+  src_directory: "src"
+  data_directory: "data"
+  output_directory: "output"
+  config_directory: "config"
+  scripts_directory: "scripts"
+  docs_directory: "docs"
+  
+  # Data subdirectories
+  scenarios_directory: "data/scenarios"
+  
+  # Output subdirectories
+  conversations_directory: "output/conversations"
+  evaluations_directory: "output/evaluations"
+  analysis_directory: "output/analysis"
+  visualizations_directory: "output/visualizations"
+  logs_directory: "output/logs"
+  temp_directory: "output/temp"
+  
+  # Configuration subdirectories
+  models_config_directory: "config/models"
+  scenarios_config_directory: "config/scenarios"
+
 # Model Configuration
 models:
   openai:
@@ -16,7 +42,7 @@ models:
     
   deepseek:
     api_url: "http://${LOCAL_LLM_SERVER:-192.168.86.23:1234}/v1"
-    model_path: "deepseek-r1"  # API identifier for DeepSeek
+    model_path: "deepseek/deepseek-r1-0528-qwen3-8b"  # API identifier for DeepSeek
     temperature: 0.7
     max_new_tokens: 2048
     timeout: 60.0
@@ -58,7 +84,8 @@ research:
   confidence_level: 0.95
   
   # Scenario settings
-  scenario_file: "data/scenarios.yaml"
+  scenarios_directory: "data/scenarios"
+  scenario_config_file: "config/scenarios/main_scenarios.yaml"
   categories: ["anxiety", "depression", "crisis", "general"]
   
   # Sample size targets (merged from both configs)
@@ -71,17 +98,28 @@ research:
     - "t_test"
   effect_size_calculation: true
 
-# Output Configuration  
+# Output Configuration - Clean Structure
 output:
-  results_directory: "data/results"
+  # Base output directory
+  base_directory: "output"
+  
+  # Specific output directories
+  conversations_directory: "output/conversations"
+  evaluations_directory: "output/evaluations"
+  analysis_directory: "output/analysis"
+  visualizations_directory: "output/visualizations"
+  logs_directory: "output/logs"
+  
+  # Output options
   save_conversations: true
   save_evaluations: true
   generate_visualizations: true
   create_statistical_report: true
-  generate_report: true  # Added from original config
+  generate_report: true
   
   # File naming
   timestamp_format: "%Y%m%d_%H%M%S"
+  include_timestamp: true
   
 # System Prompts
 system_prompts:

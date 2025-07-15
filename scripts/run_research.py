@@ -4,7 +4,7 @@ Mental Health LLM Evaluation Research Runner
 ===========================================
 
 Main entry point that orchestrates the complete evaluation study comparing
-OpenAI GPT-4 vs DeepSeek for therapeutic conversations.
+multiple LLM models for therapeutic conversations.
 
 This script:
 1. Loads scenarios and initializes models
@@ -15,12 +15,13 @@ This script:
 6. Displays key findings and recommendations
 
 Usage:
-    python run_research.py [--quick] [--scenarios N] [--output DIR]
+    python run_research.py [--models MODEL1,MODEL2,...] [--quick] [--scenarios N] [--output DIR]
 
 Options:
+    --models        Comma-separated list of models: openai,claude,deepseek,gemma or 'all' (default: openai,deepseek)
     --quick         Run with 3 scenarios for fast testing
     --scenarios N   Run with N scenarios (default: all 10)
-    --output DIR    Output directory (default: output/)
+    --output DIR    Output directory (default: results/)
 """
 
 import os
@@ -46,11 +47,12 @@ def create_progress_bar(current: int, total: int, width: int = 50) -> str:
     return f"[{bar}] {percentage:.1f}% ({current}/{total})"
 
 
-def print_header():
+def print_header(models):
     """Print the research study header"""
     print("🧠 Mental Health LLM Evaluation Research Study")
     print("=" * 60)
-    print("📋 Comparing OpenAI GPT-4 vs DeepSeek for Therapeutic Conversations")
+    print(f"📋 Comparing Multiple LLM Models for Therapeutic Conversations")
+    print(f"🤖 Models: {', '.join(models)}")
     print("🎯 Academic Capstone Project - Statistical Analysis & Recommendations")
     print(f"📅 Started: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
     print("=" * 60)
@@ -147,6 +149,77 @@ def load_modules():
         return None
 
 
+def load_model_clients():
+    """Load all model client classes"""
+    print("📦 Loading model clients...")
+    
+    model_clients = {}
+    
+    try:
+        from src.models.openai_client import OpenAIClient
+        model_clients['openai'] = OpenAIClient
+        print("   ✅ OpenAI client loaded")
+    except ImportError as e:
+        print(f"   ❌ Failed to load OpenAI client: {e}")
+        model_clients['openai'] = None
+    
+    try:
+        from src.models.claude_client import ClaudeClient
+        model_clients['claude'] = ClaudeClient
+        print("   ✅ Claude client loaded")
+    except ImportError as e:
+        print(f"   ❌ Failed to load Claude client: {e}")
+        model_clients['claude'] = None
+    
+    try:
+        from src.models.deepseek_client import DeepSeekClient
+        model_clients['deepseek'] = DeepSeekClient
+        print("   ✅ DeepSeek client loaded")
+    except ImportError as e:
+        print(f"   ❌ Failed to load DeepSeek client: {e}")
+        model_clients['deepseek'] = None
+    
+    try:
+        from src.models.gemma_client import GemmaClient
+        model_clients['gemma'] = GemmaClient
+        print("   ✅ Gemma client loaded")
+    except ImportError as e:
+        print(f"   ❌ Failed to load Gemma client: {e}")
+        model_clients['gemma'] = None
+    
+    return model_clients
+
+
+def check_model_availability(model_names, model_clients):
+    """Check availability of selected models"""
+    print("🔍 Checking model availability...")
+    
+    available_models = []
+    
+    for model_name in model_names:
+        if model_name not in model_clients:
+            print(f"   ❌ Unknown model: {model_name}")
+            continue
+            
+        client_class = model_clients[model_name]
+        if client_class is None:
+            print(f"   ❌ {model_name} client not loaded")
+            continue
+        
+        try:
+            # Try to instantiate the client
+            client = client_class()
+            # Try a simple test call
+            response = client.generate_response("Test", temperature=0.7)
+            print(f"   ✅ {model_name} available")
+            available_models.append(model_name)
+        except Exception as e:
+            print(f"   ⚠️  {model_name} unavailable: {str(e)}")
+            print(f"      Continuing with other models...")
+    
+    return available_models
+
+
 def run_evaluation_pipeline(evaluator_class, limit: Optional[int] = None) -> tuple:
     """
     Run the complete evaluation pipeline
@@ -237,7 +310,7 @@ def run_statistical_analysis(results, analyze_func, report_func, strengths_func)
         return None, None, None, error_msg
 
 
-def create_visualizations(results, analysis, viz_func, slides_func, has_matplotlib: bool, output_dir: str) -> tuple:
+def create_visualizations(results, analysis, viz_func, slides_func, has_matplotlib: bool, results_dir: str) -> tuple:
     """
     Generate all visualizations
     
@@ -253,8 +326,8 @@ def create_visualizations(results, analysis, viz_func, slides_func, has_matplotl
         print("\n🎨 Creating publication-quality visualizations...")
         
         # Create visualizations directory
-        viz_dir = os.path.join(output_dir, "visualizations")
-        presentation_dir = os.path.join(output_dir, "presentation")
+        viz_dir = os.path.join(results_dir, "visualizations")
+        presentation_dir = os.path.join(results_dir, "presentation")
         
         print("   • Overall comparison bar chart")
         print("   • Category performance radar chart")
@@ -277,13 +350,13 @@ def create_visualizations(results, analysis, viz_func, slides_func, has_matplotl
         return [], [], error_msg
 
 
-def save_results(results, analysis, report, strengths, output_dir: str):
+def save_results(results, analysis, report, strengths, results_dir: str):
     """Save all results to files"""
     try:
-        print(f"\n💾 Saving results to {output_dir}/...")
+        print(f"\n💾 Saving results to {results_dir}/...")
         
         # Create output directory
-        os.makedirs(output_dir, exist_ok=True)
+        os.makedirs(results_dir, exist_ok=True)
         
         # Save detailed results
         import json
@@ -319,13 +392,13 @@ def save_results(results, analysis, report, strengths, output_dir: str):
             results_data = {'scenarios': results}
         
         # Save detailed results as JSON
-        with open(os.path.join(output_dir, "detailed_results.json"), 'w') as f:
+        with open(os.path.join(results_dir, "detailed_results.json"), 'w') as f:
             json.dump(results_data, f, indent=2, default=str)
         print("   ✅ Detailed results saved")
         
         # Save analysis summary
         if analysis:
-            with open(os.path.join(output_dir, "statistical_analysis.json"), 'w') as f:
+            with open(os.path.join(results_dir, "statistical_analysis.json"), 'w') as f:
                 json.dump({
                     'overall_winner': analysis.overall_winner,
                     'confidence_level': analysis.confidence_level,
@@ -339,17 +412,17 @@ def save_results(results, analysis, report, strengths, output_dir: str):
         
         # Save research report
         if report:
-            with open(os.path.join(output_dir, "research_report.txt"), 'w') as f:
+            with open(os.path.join(results_dir, "research_report.txt"), 'w') as f:
                 f.write(report)
             print("   ✅ Research report saved")
         
         # Save model strengths
         if strengths:
-            with open(os.path.join(output_dir, "model_strengths.json"), 'w') as f:
+            with open(os.path.join(results_dir, "model_strengths.json"), 'w') as f:
                 json.dump(strengths, f, indent=2)
             print("   ✅ Model strengths saved")
         
-        print(f"✅ All results saved to {output_dir}/")
+        print(f"✅ All results saved to {results_dir}/")
         
     except Exception as e:
         print(f"❌ Error saving results: {e}")
@@ -467,14 +540,21 @@ def main():
     """Main research pipeline"""
     # Parse command line arguments
     parser = argparse.ArgumentParser(description="Mental Health LLM Evaluation Research")
+    parser.add_argument("--models", default="openai,deepseek", help="Comma-separated list of models or 'all' (default: openai,deepseek)")
     parser.add_argument("--quick", action="store_true", help="Run quick evaluation (3 scenarios)")
     parser.add_argument("--scenarios", type=int, help="Number of scenarios to run (default: all)")
-    parser.add_argument("--output", default="output", help="Output directory (default: output/)")
+    parser.add_argument("--output", default="results", help="Output directory (default: results/)")
     
     args = parser.parse_args()
     
+    # Parse model selection
+    if args.models.lower() == 'all':
+        selected_models = ['openai', 'claude', 'deepseek', 'gemma']
+    else:
+        selected_models = [model.strip() for model in args.models.split(',')]
+    
     # Print header
-    print_header()
+    print_header(selected_models)
     
     # Check dependencies
     if not check_dependencies():
@@ -490,6 +570,20 @@ def main():
         print("❌ Failed to load required modules")
         sys.exit(1)
     
+    print()
+    
+    # Load model clients
+    model_clients = load_model_clients()
+    
+    # Check model availability
+    available_models = check_model_availability(selected_models, model_clients)
+    
+    if len(available_models) < 2:
+        print("❌ Need at least 2 models for comparison")
+        print(f"Available models: {available_models}")
+        sys.exit(1)
+    
+    print(f"✅ {len(available_models)} models available for comparison: {', '.join(available_models)}")
     print()
     
     # Determine evaluation parameters

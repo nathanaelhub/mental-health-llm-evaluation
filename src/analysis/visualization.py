@@ -63,7 +63,7 @@ class ResultsVisualizer:
         self,
         results: Dict[str, List[Dict[str, Any]]],
         statistical_results: Optional[StatisticalResults] = None,
-        output_dir: str = "./visualizations"
+        results_dir: str = "./visualizations"
     ) -> Dict[str, str]:
         """
         Create a comprehensive visualization dashboard.
@@ -71,59 +71,59 @@ class ResultsVisualizer:
         Args:
             results: Model evaluation results
             statistical_results: Optional statistical analysis results
-            output_dir: Directory to save visualizations
+            results_dir: Directory to save visualizations
             
         Returns:
             Dictionary mapping visualization names to file paths
         """
         import os
-        os.makedirs(output_dir, exist_ok=True)
+        os.makedirs(results_dir, exist_ok=True)
         
         self.logger.info("Creating comprehensive visualization dashboard")
         
         generated_files = {}
         
         # Overall comparison
-        fig_path = self.create_overall_comparison(results, output_dir)
+        fig_path = self.create_overall_comparison(results, results_dir)
         if fig_path:
             generated_files["overall_comparison"] = fig_path
         
         # Score distributions
-        fig_path = self.create_score_distributions(results, output_dir)
+        fig_path = self.create_score_distributions(results, results_dir)
         if fig_path:
             generated_files["score_distributions"] = fig_path
         
         # Performance radar charts
-        fig_path = self.create_radar_charts(results, output_dir)
+        fig_path = self.create_radar_charts(results, results_dir)
         if fig_path:
             generated_files["radar_charts"] = fig_path
         
         # Technical metrics
-        fig_path = self.create_technical_metrics_plot(results, output_dir)
+        fig_path = self.create_technical_metrics_plot(results, results_dir)
         if fig_path:
             generated_files["technical_metrics"] = fig_path
         
         # Therapeutic quality heatmap
-        fig_path = self.create_therapeutic_heatmap(results, output_dir)
+        fig_path = self.create_therapeutic_heatmap(results, results_dir)
         if fig_path:
             generated_files["therapeutic_heatmap"] = fig_path
         
         # Patient experience comparison
-        fig_path = self.create_patient_experience_plot(results, output_dir)
+        fig_path = self.create_patient_experience_plot(results, results_dir)
         if fig_path:
             generated_files["patient_experience"] = fig_path
         
         # Statistical significance plot
         if statistical_results:
             fig_path = self.create_statistical_significance_plot(
-                statistical_results, output_dir
+                statistical_results, results_dir
             )
             if fig_path:
                 generated_files["statistical_significance"] = fig_path
         
         # Interactive dashboard
         if self.config.interactive:
-            fig_path = self.create_interactive_dashboard(results, output_dir)
+            fig_path = self.create_interactive_dashboard(results, results_dir)
             if fig_path:
                 generated_files["interactive_dashboard"] = fig_path
         
@@ -133,7 +133,7 @@ class ResultsVisualizer:
     def create_overall_comparison(
         self,
         results: Dict[str, List[Dict[str, Any]]],
-        output_dir: str
+        results_dir: str
     ) -> Optional[str]:
         """Create overall model comparison chart."""
         try:
@@ -179,7 +179,7 @@ class ResultsVisualizer:
             
             # Save plot
             filename = f"overall_comparison.{self.config.save_format}"
-            filepath = f"{output_dir}/{filename}"
+            filepath = f"{results_dir}/{filename}"
             plt.savefig(filepath, dpi=self.config.dpi, bbox_inches='tight')
             plt.close()
             
@@ -192,7 +192,7 @@ class ResultsVisualizer:
     def create_score_distributions(
         self,
         results: Dict[str, List[Dict[str, Any]]],
-        output_dir: str
+        results_dir: str
     ) -> Optional[str]:
         """Create score distribution plots."""
         try:
@@ -231,7 +231,7 @@ class ResultsVisualizer:
             
             # Save plot
             filename = f"score_distributions.{self.config.save_format}"
-            filepath = f"{output_dir}/{filename}"
+            filepath = f"{results_dir}/{filename}"
             plt.savefig(filepath, dpi=self.config.dpi, bbox_inches='tight')
             plt.close()
             
@@ -244,7 +244,7 @@ class ResultsVisualizer:
     def create_radar_charts(
         self,
         results: Dict[str, List[Dict[str, Any]]],
-        output_dir: str
+        results_dir: str
     ) -> Optional[str]:
         """Create radar charts for model comparison."""
         try:
@@ -294,7 +294,7 @@ class ResultsVisualizer:
             
             # Save plot
             filename = f"radar_charts.html"
-            filepath = f"{output_dir}/{filename}"
+            filepath = f"{results_dir}/{filename}"
             fig.write_html(filepath)
             
             return filepath
@@ -306,7 +306,7 @@ class ResultsVisualizer:
     def create_technical_metrics_plot(
         self,
         results: Dict[str, List[Dict[str, Any]]],
-        output_dir: str
+        results_dir: str
     ) -> Optional[str]:
         """Create technical metrics comparison plot."""
         try:
@@ -357,7 +357,7 @@ class ResultsVisualizer:
             
             # Save plot
             filename = f"technical_metrics.{self.config.save_format}"
-            filepath = f"{output_dir}/{filename}"
+            filepath = f"{results_dir}/{filename}"
             plt.savefig(filepath, dpi=self.config.dpi, bbox_inches='tight')
             plt.close()
             
@@ -370,7 +370,7 @@ class ResultsVisualizer:
     def create_therapeutic_heatmap(
         self,
         results: Dict[str, List[Dict[str, Any]]],
-        output_dir: str
+        results_dir: str
     ) -> Optional[str]:
         """Create therapeutic quality heatmap."""
         try:
@@ -402,7 +402,7 @@ class ResultsVisualizer:
             
             # Save plot
             filename = f"therapeutic_heatmap.{self.config.save_format}"
-            filepath = f"{output_dir}/{filename}"
+            filepath = f"{results_dir}/{filename}"
             plt.savefig(filepath, dpi=self.config.dpi, bbox_inches='tight')
             plt.close()
             
@@ -415,7 +415,7 @@ class ResultsVisualizer:
     def create_patient_experience_plot(
         self,
         results: Dict[str, List[Dict[str, Any]]],
-        output_dir: str
+        results_dir: str
     ) -> Optional[str]:
         """Create patient experience comparison plot."""
         try:
@@ -466,7 +466,7 @@ class ResultsVisualizer:
             
             # Save plot
             filename = f"patient_experience.{self.config.save_format}"
-            filepath = f"{output_dir}/{filename}"
+            filepath = f"{results_dir}/{filename}"
             plt.savefig(filepath, dpi=self.config.dpi, bbox_inches='tight')
             plt.close()
             
@@ -479,7 +479,7 @@ class ResultsVisualizer:
     def create_statistical_significance_plot(
         self,
         statistical_results: StatisticalResults,
-        output_dir: str
+        results_dir: str
     ) -> Optional[str]:
         """Create statistical significance visualization."""
         try:
@@ -529,7 +529,7 @@ class ResultsVisualizer:
             
             # Save plot
             filename = f"statistical_significance.{self.config.save_format}"
-            filepath = f"{output_dir}/{filename}"
+            filepath = f"{results_dir}/{filename}"
             plt.savefig(filepath, dpi=self.config.dpi, bbox_inches='tight')
             plt.close()
             
@@ -542,7 +542,7 @@ class ResultsVisualizer:
     def create_interactive_dashboard(
         self,
         results: Dict[str, List[Dict[str, Any]]],
-        output_dir: str
+        results_dir: str
     ) -> Optional[str]:
         """Create interactive dashboard using Plotly."""
         try:
@@ -638,7 +638,7 @@ class ResultsVisualizer:
             
             # Save interactive plot
             filename = f"interactive_dashboard.html"
-            filepath = f"{output_dir}/{filename}"
+            filepath = f"{results_dir}/{filename}"
             fig.write_html(filepath)
             
             return filepath
