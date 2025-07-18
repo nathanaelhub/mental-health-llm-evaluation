@@ -55,13 +55,23 @@ class EvaluationResult:
     details: Dict = None
     
     def to_dict(self) -> Dict[str, Any]:
-        """Convert to dictionary."""
+        """Convert to dictionary with both field name formats for compatibility."""
         return {
+            # Original format with _score suffix
             'empathy_score': self.empathy_score,
             'therapeutic_value_score': self.therapeutic_value_score,
             'safety_score': self.safety_score,
             'clarity_score': self.clarity_score,
             'composite_score': self.composite_score,
+            
+            # Short format for analysis compatibility
+            'empathy': self.empathy_score,
+            'therapeutic': self.therapeutic_value_score,
+            'safety': self.safety_score,
+            'clarity': self.clarity_score,
+            'composite': self.composite_score,
+            
+            # Performance metrics
             'response_time_ms': self.response_time_ms,
             'input_tokens': self.input_tokens,
             'output_tokens': self.output_tokens,

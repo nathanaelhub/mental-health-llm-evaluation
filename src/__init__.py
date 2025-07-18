@@ -9,11 +9,32 @@ __version__ = "1.0.0"
 __author__ = "Mental Health LLM Research Team"
 __email__ = "contact@mental-health-llm.org"
 
-from .models import OpenAIClient, ClaudeClient, DeepSeekClient, GemmaClient, BaseModel, LocalLLMClient
-from .evaluation import MentalHealthEvaluator, EvaluationMetrics
-from .scenarios import ScenarioLoader, ConversationGenerator
-from .analysis import StatisticalAnalyzer, ResultsVisualizer
-from .utils import setup_logging, DataStorage
+# Use safer imports with error handling
+try:
+    from .models import OpenAIClient, ClaudeClient, DeepSeekClient, GemmaClient, BaseModel, LocalLLMClient
+except ImportError:
+    # Handle missing model components
+    OpenAIClient = ClaudeClient = DeepSeekClient = GemmaClient = BaseModel = LocalLLMClient = None
+
+try:
+    from .evaluation import MentalHealthEvaluator, EvaluationMetrics
+except ImportError:
+    MentalHealthEvaluator = EvaluationMetrics = None
+
+try:
+    from .scenarios import ScenarioLoader, ConversationGenerator
+except ImportError:
+    ScenarioLoader = ConversationGenerator = None
+
+try:
+    from .analysis import StatisticalAnalyzer, ResultsVisualizer
+except ImportError:
+    StatisticalAnalyzer = ResultsVisualizer = None
+
+try:
+    from .utils import setup_logging, DataStorage
+except ImportError:
+    setup_logging = DataStorage = None
 
 __all__ = [
     "OpenAIClient",

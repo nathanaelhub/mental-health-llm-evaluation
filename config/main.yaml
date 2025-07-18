@@ -8,7 +8,8 @@ paths:
   project_root: "."
   src_directory: "src"
   data_directory: "data"
-  output_directory: "output"
+  results_directory: "results"
+  temp_directory: "temp"
   config_directory: "config"
   scripts_directory: "scripts"
   docs_directory: "docs"
@@ -16,13 +17,13 @@ paths:
   # Data subdirectories
   scenarios_directory: "data/scenarios"
   
-  # Output subdirectories
-  conversations_directory: "output/conversations"
-  evaluations_directory: "output/evaluations"
-  analysis_directory: "output/analysis"
-  visualizations_directory: "output/visualizations"
-  logs_directory: "output/logs"
-  temp_directory: "output/temp"
+  # Results subdirectories (all outputs unified)
+  evaluations_directory: "results/evaluations"
+  reports_directory: "results/reports"
+  statistics_directory: "results/statistics"
+  visualizations_directory: "results/visualizations"
+  conversations_directory: "results/conversations"
+  development_directory: "results/development"
   
   # Configuration subdirectories
   models_config_directory: "config/models"
@@ -98,17 +99,20 @@ research:
     - "t_test"
   effect_size_calculation: true
 
-# Output Configuration - Clean Structure
+# Output Configuration - Unified Structure
 output:
-  # Base output directory
-  base_directory: "output"
+  # Base results directory (all outputs)
+  results_directory: "results"
+  # Temporary files directory
+  temp_directory: "temp"
   
   # Specific output directories
-  conversations_directory: "output/conversations"
-  evaluations_directory: "output/evaluations"
-  analysis_directory: "output/analysis"
-  visualizations_directory: "output/visualizations"
-  logs_directory: "output/logs"
+  conversations_directory: "results/conversations"
+  evaluations_directory: "results/evaluations"
+  reports_directory: "results/reports"
+  statistics_directory: "results/statistics"
+  visualizations_directory: "results/visualizations"
+  development_directory: "results/development"
   
   # Output options
   save_conversations: true

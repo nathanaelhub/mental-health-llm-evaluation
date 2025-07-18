@@ -54,7 +54,10 @@
       "Bash(__NEW_LINE__ echo -e \"\\n🏆 CONSOLIDATION SUCCESS: Your project is now optimally organized!\")",
       "Bash(cat:*)",
       "Bash(source:*)",
-      "Bash(test:*)"
+      "Bash(test:*)",
+      "Bash(timeout 30 python scripts/run_research.py --limit 1 --output test_results/ --models deepseek)",
+      "Bash(timeout 60 python:*)",
+      "Bash(claude update)"
     ],
     "deny": []
   }

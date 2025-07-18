@@ -15,6 +15,7 @@ import logging
 
 from ..models.base_model import BaseModel, ModelResponse
 from .scenario_loader import TherapeuticScenario
+from ..utils.paths import get_conversations_dir
 
 logger = logging.getLogger(__name__)
 
@@ -429,16 +430,22 @@ class ConversationGenerator:
     async def save_conversation(
         self,
         conversation: ConversationData,
-        output_dir: str = "./data/conversations"
+        output_dir: Optional[str] = None
     ) -> None:
         """
         Save conversation data to file.
         
         Args:
             conversation: Conversation data to save
-            output_dir: Directory to save conversation files
+            output_dir: Directory to save conversation files (defaults to configured conversations directory)
         """
         import os
+        from pathlib import Path
+        
+        # Use configured conversations directory if no output_dir specified
+        if output_dir is None:
+            output_dir = str(get_conversations_dir())
+        
         os.makedirs(output_dir, exist_ok=True)
         
         filename = f"{conversation.conversation_id}.json"

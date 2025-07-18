@@ -236,7 +236,7 @@ output/temp/
 
 # Legacy directories (from migration)
 results/
-generated/
+test_results/
 
 # Backup directories
 backup_*/

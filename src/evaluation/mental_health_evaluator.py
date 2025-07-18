@@ -1,12 +1,12 @@
 """
-Mental Health LLM Evaluator - Streamlined Interface
+Mental Health LLM Evaluator - Multi-Model Interface
 
-This module provides a simple, unified interface for comparing mental health LLM responses
-across OpenAI GPT-4 and DeepSeek models using standardized therapeutic scenarios.
+This module provides a unified interface for comparing mental health LLM responses
+across OpenAI GPT-4, Claude, DeepSeek, and Gemma models using standardized therapeutic scenarios.
 
 Usage:
-    evaluator = MentalHealthEvaluator()
-    results = evaluator.run_evaluation()  # Runs all 10 scenarios
+    evaluator = MentalHealthEvaluator(models=['openai', 'claude', 'deepseek', 'gemma'])
+    results = evaluator.run_evaluation()  # Runs all scenarios on selected models
     evaluator.display_results()           # Shows comparison table
     evaluator.save_results()              # Saves to JSON/CSV
 """
@@ -16,12 +16,22 @@ import json
 import yaml
 import time
 import csv
+import asyncio
+import inspect
 from datetime import datetime
 from typing import Dict, List, Any, Optional
 from dataclasses import dataclass, asdict
 
 # Import evaluation system
 from .evaluation_metrics import TherapeuticEvaluator, EvaluationResult
+
+# Import unified wrapper
+try:
+    from ..models.unified_client_wrapper import UnifiedModelClient
+    HAS_UNIFIED_WRAPPER = True
+except ImportError:
+    UnifiedModelClient = None
+    HAS_UNIFIED_WRAPPER = False
 
 # Try to import model interfaces (may not be available in test environments)
 try:
@@ -38,6 +48,20 @@ except ImportError:
     DeepSeekClient = None
     HAS_DEEPSEEK_CLIENT = False
 
+try:
+    from ..models.claude_client import ClaudeClient
+    HAS_CLAUDE_CLIENT = True
+except ImportError:
+    ClaudeClient = None
+    HAS_CLAUDE_CLIENT = False
+
+try:
+    from ..models.gemma_client import GemmaClient
+    HAS_GEMMA_CLIENT = True
+except ImportError:
+    GemmaClient = None
+    HAS_GEMMA_CLIENT = False
+
 
 @dataclass
 class ScenarioResult:
@@ -47,10 +71,8 @@ class ScenarioResult:
     category: str
     severity: str
     prompt: str
-    openai_response: str
-    deepseek_response: str
-    openai_evaluation: EvaluationResult
-    deepseek_evaluation: EvaluationResult
+    model_responses: Dict[str, str]  # model_name -> response
+    model_evaluations: Dict[str, EvaluationResult]  # model_name -> evaluation
     winner: str
     timestamp: str
 
@@ -59,32 +81,31 @@ class ScenarioResult:
 class ComparisonSummary:
     """Overall comparison summary across all scenarios"""
     total_scenarios: int
-    openai_wins: int
-    deepseek_wins: int
+    model_wins: Dict[str, int]  # model_name -> win_count
     ties: int
-    openai_avg_score: float
-    deepseek_avg_score: float
-    openai_total_cost: float
-    deepseek_total_cost: float
+    model_avg_scores: Dict[str, float]  # model_name -> avg_score
+    model_total_costs: Dict[str, float]  # model_name -> total_cost
     evaluation_time_seconds: float
+    models_evaluated: List[str]
 
 
 class MentalHealthEvaluator:
     """
-    Streamlined mental health LLM evaluation interface
+    Multi-model mental health LLM evaluation interface
     
     Provides simple methods to:
     - Load mental health scenarios
-    - Generate responses from multiple models
+    - Generate responses from multiple models (OpenAI, Claude, DeepSeek, Gemma)
     - Evaluate therapeutic quality
     - Display and save comparison results
     """
     
-    def __init__(self, scenarios_file: str = "config/scenarios/main_scenarios.yaml"):
+    def __init__(self, models: List[str] = None, scenarios_file: str = "config/scenarios/main_scenarios.yaml"):
         """
         Initialize the evaluator
         
         Args:
+            models: List of model names to evaluate (default: ['openai', 'deepseek'])
             scenarios_file: Path to YAML file containing scenarios
         """
         self.scenarios_file = scenarios_file
@@ -92,9 +113,11 @@ class MentalHealthEvaluator:
         self.results = []
         self.summary = None
         
-        # Initialize model clients
-        self.openai_client = None
-        self.deepseek_client = None
+        # Set default models if none provided
+        self.selected_models = models or ['openai', 'deepseek']
+        
+        # Initialize model clients dictionary
+        self.model_clients = {}
         self.evaluator = TherapeuticEvaluator()
         
         # Model settings
@@ -102,6 +125,7 @@ class MentalHealthEvaluator:
         self.max_tokens = 2048
         
         print("🧠 Mental Health LLM Evaluator initialized")
+        print(f"📋 Selected models: {', '.join(self.selected_models)}")
         print("📋 Loading scenarios...")
         self._load_scenarios()
         print(f"✅ Loaded {len(self.scenarios)} scenarios")
@@ -120,28 +144,45 @@ class MentalHealthEvaluator:
             raise
     
     def _initialize_clients(self):
-        """Initialize model clients if not already done"""
-        if self.openai_client is None:
-            print("🔧 Initializing OpenAI client...")
+        """Initialize model clients for selected models"""
+        for model_name in self.selected_models:
+            if model_name in self.model_clients:
+                continue  # Already initialized
+            
+            print(f"🔧 Initializing {model_name.upper()} client...")
             try:
-                if not HAS_OPENAI_CLIENT or OpenAIClient is None:
-                    raise ImportError("OpenAI client not available")
-                self.openai_client = OpenAIClient()
-                print("✅ OpenAI client ready")
+                if model_name == 'openai':
+                    if not HAS_OPENAI_CLIENT or OpenAIClient is None:
+                        raise ImportError("OpenAI client not available")
+                    client = OpenAIClient()
+                elif model_name == 'deepseek':
+                    if not HAS_DEEPSEEK_CLIENT or DeepSeekClient is None:
+                        raise ImportError("DeepSeek client not available")
+                    client = DeepSeekClient()
+                elif model_name == 'claude':
+                    if not HAS_CLAUDE_CLIENT or ClaudeClient is None:
+                        raise ImportError("Claude client not available")
+                    client = ClaudeClient()
+                elif model_name == 'gemma':
+                    if not HAS_GEMMA_CLIENT or GemmaClient is None:
+                        raise ImportError("Gemma client not available")
+                    client = GemmaClient()
+                else:
+                    raise ValueError(f"Unknown model: {model_name}")
+                
+                # Wrap with unified client if available
+                if HAS_UNIFIED_WRAPPER and UnifiedModelClient is not None:
+                    self.model_clients[model_name] = UnifiedModelClient(client)
+                else:
+                    self.model_clients[model_name] = client
+                    
+                print(f"✅ {model_name.upper()} client ready")
             except Exception as e:
-                print(f"❌ OpenAI client failed: {e}")
-                raise
-        
-        if self.deepseek_client is None:
-            print("🔧 Initializing DeepSeek client...")
-            try:
-                if not HAS_DEEPSEEK_CLIENT or DeepSeekClient is None:
-                    raise ImportError("DeepSeek client not available")
-                self.deepseek_client = DeepSeekClient()
-                print("✅ DeepSeek client ready")
-            except Exception as e:
-                print(f"❌ DeepSeek client failed: {e}")
-                raise
+                print(f"❌ {model_name.upper()} client failed: {e}")
+                # Remove from selected models if initialization fails
+                if model_name in self.selected_models:
+                    self.selected_models.remove(model_name)
+                    print(f"⚠️  Removed {model_name} from evaluation")
     
     def run_evaluation(self, limit: Optional[int] = None) -> List[ScenarioResult]:
         """
@@ -167,45 +208,39 @@ class MentalHealthEvaluator:
         print("=" * 60)
         
         self.results = []
-        openai_total_cost = 0.0
-        deepseek_total_cost = 0.0
+        model_total_costs = {model: 0.0 for model in self.selected_models}
         
         for i, scenario in enumerate(scenarios_to_run, 1):
             print(f"\n[{i}/{total_scenarios}] {scenario['name']} ({scenario['category']})")
             print("-" * 40)
             
-            # Generate responses
-            print("🤖 Generating OpenAI response...")
-            openai_response, openai_time, openai_cost = self._generate_response(
-                self.openai_client, scenario['prompt']
-            )
+            # Generate responses from all models
+            model_responses = {}
+            model_evaluations = {}
+            model_times = {}
             
-            print("🤖 Generating DeepSeek response...")
-            deepseek_response, deepseek_time, deepseek_cost = self._generate_response(
-                self.deepseek_client, scenario['prompt']
-            )
+            for model_name in self.selected_models:
+                print(f"🤖 Generating {model_name.upper()} response...")
+                response, response_time, cost = self._generate_response(
+                    self.model_clients[model_name], scenario['prompt']
+                )
+                model_responses[model_name] = response
+                model_times[model_name] = response_time
+                model_total_costs[model_name] += cost
             
-            # Evaluate responses
+            # Evaluate all responses
             print("📏 Evaluating responses...")
-            openai_eval = self.evaluator.evaluate_response(
-                scenario['prompt'], openai_response, 
-                response_time_ms=openai_time, 
-                input_tokens=len(scenario['prompt'].split()) * 1.3,  # Rough estimate
-                output_tokens=len(openai_response.split()) * 1.3
-            )
-            
-            deepseek_eval = self.evaluator.evaluate_response(
-                scenario['prompt'], deepseek_response,
-                response_time_ms=deepseek_time
-            )
+            for model_name in self.selected_models:
+                evaluation = self.evaluator.evaluate_response(
+                    scenario['prompt'], model_responses[model_name],
+                    response_time_ms=model_times[model_name],
+                    input_tokens=len(scenario['prompt'].split()) * 1.3,  # Rough estimate
+                    output_tokens=len(model_responses[model_name].split()) * 1.3
+                )
+                model_evaluations[model_name] = evaluation
             
             # Determine winner
-            if openai_eval.composite_score > deepseek_eval.composite_score:
-                winner = "OpenAI"
-            elif deepseek_eval.composite_score > openai_eval.composite_score:
-                winner = "DeepSeek"
-            else:
-                winner = "Tie"
+            winner = self._determine_winner(model_evaluations)
             
             # Store result
             result = ScenarioResult(
@@ -214,26 +249,23 @@ class MentalHealthEvaluator:
                 category=scenario['category'],
                 severity=scenario['severity'],
                 prompt=scenario['prompt'],
-                openai_response=openai_response,
-                deepseek_response=deepseek_response,
-                openai_evaluation=openai_eval,
-                deepseek_evaluation=deepseek_eval,
+                model_responses=model_responses,
+                model_evaluations=model_evaluations,
                 winner=winner,
                 timestamp=datetime.now().isoformat()
             )
             
             self.results.append(result)
-            openai_total_cost += openai_cost
-            deepseek_total_cost += deepseek_cost
             
             # Show quick result
             print(f"🏆 Winner: {winner}")
-            print(f"   OpenAI: {openai_eval.composite_score:.2f}/10")
-            print(f"   DeepSeek: {deepseek_eval.composite_score:.2f}/10")
+            for model_name in self.selected_models:
+                score = model_evaluations[model_name].composite_score
+                print(f"   {model_name.upper()}: {score:.2f}/10")
         
         # Calculate summary
         end_time = time.time()
-        self._calculate_summary(openai_total_cost, deepseek_total_cost, end_time - start_time)
+        self._calculate_summary(model_total_costs, end_time - start_time)
         
         print(f"\n✅ Evaluation complete in {end_time - start_time:.1f} seconds")
         return self.results
@@ -249,11 +281,23 @@ class MentalHealthEvaluator:
         
         try:
             if hasattr(client, 'generate_response'):
-                response = client.generate_response(
-                    prompt, 
-                    temperature=self.temperature,
-                    max_tokens=self.max_tokens
-                )
+                method = getattr(client, 'generate_response')
+                
+                # Check if the method is async
+                if inspect.iscoroutinefunction(method):
+                    # Run async method with asyncio
+                    response = asyncio.run(method(
+                        prompt, 
+                        temperature=self.temperature,
+                        max_tokens=self.max_tokens
+                    ))
+                else:
+                    # Call sync method normally
+                    response = method(
+                        prompt, 
+                        temperature=self.temperature,
+                        max_tokens=self.max_tokens
+                    )
             else:
                 # Fallback for different interface
                 response = client.chat(prompt)
@@ -261,9 +305,12 @@ class MentalHealthEvaluator:
             response_time_ms = (time.time() - start_time) * 1000
             
             # Extract response text and cost
-            if isinstance(response, dict):
+            if hasattr(response, 'content'):
+                response_text = response.content
+                cost = getattr(response, 'cost_usd', 0.0)
+            elif isinstance(response, dict):
                 response_text = response.get('content', str(response))
-                cost = response.get('cost', 0.0)
+                cost = response.get('cost_usd', response.get('cost', 0.0))
             else:
                 response_text = str(response)
                 cost = 0.0
@@ -274,28 +321,52 @@ class MentalHealthEvaluator:
             print(f"❌ Error generating response: {e}")
             return f"Error: {str(e)}", 0.0, 0.0
     
-    def _calculate_summary(self, openai_cost: float, deepseek_cost: float, eval_time: float):
+    def _determine_winner(self, model_evaluations: Dict[str, EvaluationResult]) -> str:
+        """Determine the winner from model evaluations"""
+        if not model_evaluations:
+            return "No models"
+        
+        # Find the highest score
+        max_score = max(eval.composite_score for eval in model_evaluations.values())
+        winners = [model for model, eval in model_evaluations.items() 
+                  if eval.composite_score == max_score]
+        
+        if len(winners) == 1:
+            return winners[0].upper()
+        else:
+            return "Tie"
+    
+    def _calculate_summary(self, model_total_costs: Dict[str, float], eval_time: float):
         """Calculate overall comparison summary"""
         if not self.results:
             return
         
-        openai_wins = sum(1 for r in self.results if r.winner == "OpenAI")
-        deepseek_wins = sum(1 for r in self.results if r.winner == "DeepSeek")
-        ties = sum(1 for r in self.results if r.winner == "Tie")
+        # Count wins for each model
+        model_wins = {model: 0 for model in self.selected_models}
+        ties = 0
         
-        openai_scores = [r.openai_evaluation.composite_score for r in self.results]
-        deepseek_scores = [r.deepseek_evaluation.composite_score for r in self.results]
+        for result in self.results:
+            if result.winner == "Tie":
+                ties += 1
+            else:
+                winner_lower = result.winner.lower()
+                if winner_lower in model_wins:
+                    model_wins[winner_lower] += 1
+        
+        # Calculate average scores
+        model_avg_scores = {}
+        for model in self.selected_models:
+            scores = [r.model_evaluations[model].composite_score for r in self.results]
+            model_avg_scores[model] = sum(scores) / len(scores) if scores else 0.0
         
         self.summary = ComparisonSummary(
             total_scenarios=len(self.results),
-            openai_wins=openai_wins,
-            deepseek_wins=deepseek_wins,
+            model_wins=model_wins,
             ties=ties,
-            openai_avg_score=sum(openai_scores) / len(openai_scores),
-            deepseek_avg_score=sum(deepseek_scores) / len(deepseek_scores),
-            openai_total_cost=openai_cost,
-            deepseek_total_cost=deepseek_cost,
-            evaluation_time_seconds=eval_time
+            model_avg_scores=model_avg_scores,
+            model_total_costs=model_total_costs,
+            evaluation_time_seconds=eval_time,
+            models_evaluated=self.selected_models.copy()
         )
     
     def display_results(self):
@@ -304,53 +375,75 @@ class MentalHealthEvaluator:
             print("❌ No results to display. Run evaluation first.")
             return
         
-        print("\n" + "=" * 100)
+        models_count = len(self.selected_models)
+        table_width = 40 + (models_count * 10) + 10  # Base + model columns + winner
+        
+        print("\n" + "=" * table_width)
         print("🏆 MENTAL HEALTH LLM EVALUATION RESULTS")
-        print("=" * 100)
+        print("=" * table_width)
         
         # Header
-        print(f"{'Scenario':<25} {'Category':<12} {'OpenAI':<8} {'DeepSeek':<8} {'Winner':<10}")
-        print(f"{'Name':<25} {'Severity':<12} {'Score':<8} {'Score':<8} {'':<10}")
-        print("-" * 100)
+        header = f"{'Scenario':<25} {'Category':<12} "
+        for model in self.selected_models:
+            header += f"{model.upper():<8} "
+        header += f"{'Winner':<10}"
+        print(header)
+        
+        subheader = f"{'Name':<25} {'Severity':<12} "
+        for _ in self.selected_models:
+            subheader += f"{'Score':<8} "
+        subheader += f"{'':<10}"
+        print(subheader)
+        print("-" * table_width)
         
         # Scenario results
         for result in self.results:
-            openai_score = f"{result.openai_evaluation.composite_score:.2f}"
-            deepseek_score = f"{result.deepseek_evaluation.composite_score:.2f}"
             category_severity = f"{result.category}/{result.severity}"
+            row = f"{result.scenario_name[:24]:<25} {category_severity[:11]:<12} "
             
-            print(f"{result.scenario_name[:24]:<25} {category_severity[:11]:<12} "
-                  f"{openai_score:<8} {deepseek_score:<8} {result.winner:<10}")
+            for model in self.selected_models:
+                score = f"{result.model_evaluations[model].composite_score:.2f}"
+                row += f"{score:<8} "
+            
+            row += f"{result.winner:<10}"
+            print(row)
         
-        print("-" * 100)
+        print("-" * table_width)
         
         # Summary
         if self.summary:
             print(f"\n📊 SUMMARY:")
             print(f"   Total Scenarios: {self.summary.total_scenarios}")
-            print(f"   OpenAI Wins: {self.summary.openai_wins}")
-            print(f"   DeepSeek Wins: {self.summary.deepseek_wins}")
+            
+            # Model wins
+            for model in self.selected_models:
+                wins = self.summary.model_wins.get(model, 0)
+                print(f"   {model.upper()} Wins: {wins}")
             print(f"   Ties: {self.summary.ties}")
-            print(f"   OpenAI Avg Score: {self.summary.openai_avg_score:.2f}/10")
-            print(f"   DeepSeek Avg Score: {self.summary.deepseek_avg_score:.2f}/10")
-            print(f"   OpenAI Total Cost: ${self.summary.openai_total_cost:.4f}")
-            print(f"   DeepSeek Total Cost: ${self.summary.deepseek_total_cost:.4f}")
+            
+            # Average scores
+            for model in self.selected_models:
+                avg_score = self.summary.model_avg_scores.get(model, 0.0)
+                print(f"   {model.upper()} Avg Score: {avg_score:.2f}/10")
+            
+            # Costs
+            for model in self.selected_models:
+                cost = self.summary.model_total_costs.get(model, 0.0)
+                print(f"   {model.upper()} Total Cost: ${cost:.4f}")
+            
             print(f"   Evaluation Time: {self.summary.evaluation_time_seconds:.1f} seconds")
             
             # Overall winner
-            if self.summary.openai_avg_score > self.summary.deepseek_avg_score:
-                overall_winner = "OpenAI GPT-4"
-                score_diff = self.summary.openai_avg_score - self.summary.deepseek_avg_score
-            elif self.summary.deepseek_avg_score > self.summary.openai_avg_score:
-                overall_winner = "DeepSeek"
-                score_diff = self.summary.deepseek_avg_score - self.summary.openai_avg_score
-            else:
-                overall_winner = "Tie"
-                score_diff = 0
-            
-            print(f"\n🏆 OVERALL WINNER: {overall_winner}")
-            if score_diff > 0:
-                print(f"   Margin: +{score_diff:.2f} points")
+            if self.summary.model_avg_scores:
+                best_model = max(self.summary.model_avg_scores.items(), key=lambda x: x[1])
+                best_models = [m for m, s in self.summary.model_avg_scores.items() if s == best_model[1]]
+                
+                if len(best_models) == 1:
+                    print(f"\n🏆 OVERALL WINNER: {best_models[0].upper()}")
+                    print(f"   Best Score: {best_model[1]:.2f}/10")
+                else:
+                    print(f"\n🏆 OVERALL RESULT: Tie between {', '.join(m.upper() for m in best_models)}")
+                    print(f"   Tied Score: {best_model[1]:.2f}/10")
     
     def display_detailed_breakdown(self):
         """Display detailed breakdown by evaluation dimension"""
@@ -358,28 +451,26 @@ class MentalHealthEvaluator:
             print("❌ No results to display. Run evaluation first.")
             return
         
-        print("\n" + "=" * 120)
+        table_width = 80 + (len(self.selected_models) * 50)
+        print("\n" + "=" * min(table_width, 150))
         print("📋 DETAILED EVALUATION BREAKDOWN")
-        print("=" * 120)
+        print("=" * min(table_width, 150))
         
         # Header
-        print(f"{'Scenario':<20} {'Model':<8} {'Empathy':<8} {'Therapy':<8} {'Safety':<8} {'Clarity':<8} {'Total':<8}")
-        print("-" * 120)
+        print(f"{'Scenario':<20} {'Model':<10} {'Empathy':<8} {'Therapy':<8} {'Safety':<8} {'Clarity':<8} {'Total':<8}")
+        print("-" * min(table_width, 150))
         
         for result in self.results:
-            # OpenAI row
-            openai_eval = result.openai_evaluation
-            print(f"{result.scenario_name[:19]:<20} {'OpenAI':<8} "
-                  f"{openai_eval.empathy_score:.1f}<8 {openai_eval.therapeutic_value_score:.1f}<8 "
-                  f"{openai_eval.safety_score:.1f}<8 {openai_eval.clarity_score:.1f}<8 "
-                  f"{openai_eval.composite_score:.2f}<8")
-            
-            # DeepSeek row
-            deepseek_eval = result.deepseek_evaluation
-            print(f"{'':<20} {'DeepSeek':<8} "
-                  f"{deepseek_eval.empathy_score:.1f}<8 {deepseek_eval.therapeutic_value_score:.1f}<8 "
-                  f"{deepseek_eval.safety_score:.1f}<8 {deepseek_eval.clarity_score:.1f}<8 "
-                  f"{deepseek_eval.composite_score:.2f}<8")
+            first_model = True
+            for model in self.selected_models:
+                evaluation = result.model_evaluations[model]
+                scenario_name = result.scenario_name[:19] if first_model else ''
+                
+                print(f"{scenario_name:<20} {model.upper():<10} "
+                      f"{evaluation.empathy_score:.1f}{'<8'} {evaluation.therapeutic_value_score:.1f}{'<8'} "
+                      f"{evaluation.safety_score:.1f}{'<8'} {evaluation.clarity_score:.1f}{'<8'} "
+                      f"{evaluation.composite_score:.2f}{'<8'}")
+                first_model = False
             print()
     
     def save_results(self, results_dir: str = "results/evaluations") -> Dict[str, str]:
@@ -415,10 +506,8 @@ class MentalHealthEvaluator:
                 "category": result.category,
                 "severity": result.severity,
                 "prompt": result.prompt,
-                "openai_response": result.openai_response,
-                "deepseek_response": result.deepseek_response,
-                "openai_evaluation": result.openai_evaluation.to_dict(),
-                "deepseek_evaluation": result.deepseek_evaluation.to_dict(),
+                "model_responses": result.model_responses,
+                "model_evaluations": {model: eval.to_dict() for model, eval in result.model_evaluations.items()},
                 "winner": result.winner,
                 "timestamp": result.timestamp
             }
@@ -432,33 +521,51 @@ class MentalHealthEvaluator:
         with open(csv_file, 'w', newline='') as f:
             writer = csv.writer(f)
             
-            # Header
-            writer.writerow([
-                'Scenario ID', 'Scenario Name', 'Category', 'Severity',
-                'OpenAI Score', 'DeepSeek Score', 'Winner',
-                'OpenAI Empathy', 'OpenAI Therapy', 'OpenAI Safety', 'OpenAI Clarity',
-                'DeepSeek Empathy', 'DeepSeek Therapy', 'DeepSeek Safety', 'DeepSeek Clarity'
-            ])
+            # Dynamic header based on selected models
+            header = ['Scenario ID', 'Scenario Name', 'Category', 'Severity']
+            
+            # Add score columns for each model
+            for model in self.selected_models:
+                header.append(f'{model.upper()} Score')
+            header.append('Winner')
+            
+            # Add detailed metric columns for each model
+            for model in self.selected_models:
+                header.extend([
+                    f'{model.upper()} Empathy',
+                    f'{model.upper()} Therapy',
+                    f'{model.upper()} Safety',
+                    f'{model.upper()} Clarity'
+                ])
+            
+            writer.writerow(header)
             
             # Data rows
             for result in self.results:
-                writer.writerow([
+                row = [
                     result.scenario_id,
                     result.scenario_name,
                     result.category,
-                    result.severity,
-                    f"{result.openai_evaluation.composite_score:.2f}",
-                    f"{result.deepseek_evaluation.composite_score:.2f}",
-                    result.winner,
-                    f"{result.openai_evaluation.empathy_score:.1f}",
-                    f"{result.openai_evaluation.therapeutic_value_score:.1f}",
-                    f"{result.openai_evaluation.safety_score:.1f}",
-                    f"{result.openai_evaluation.clarity_score:.1f}",
-                    f"{result.deepseek_evaluation.empathy_score:.1f}",
-                    f"{result.deepseek_evaluation.therapeutic_value_score:.1f}",
-                    f"{result.deepseek_evaluation.safety_score:.1f}",
-                    f"{result.deepseek_evaluation.clarity_score:.1f}"
-                ])
+                    result.severity
+                ]
+                
+                # Add scores for each model
+                for model in self.selected_models:
+                    evaluation = result.model_evaluations[model]
+                    row.append(f"{evaluation.composite_score:.2f}")
+                row.append(result.winner)
+                
+                # Add detailed metrics for each model
+                for model in self.selected_models:
+                    evaluation = result.model_evaluations[model]
+                    row.extend([
+                        f"{evaluation.empathy_score:.1f}",
+                        f"{evaluation.therapeutic_value_score:.1f}",
+                        f"{evaluation.safety_score:.1f}",
+                        f"{evaluation.clarity_score:.1f}"
+                    ])
+                
+                writer.writerow(row)
         
         file_paths = {
             "json": json_file,
@@ -476,8 +583,8 @@ def main():
     """Simple example usage"""
     print("🧠 Mental Health LLM Evaluation Demo")
     
-    # Initialize evaluator
-    evaluator = MentalHealthEvaluator()
+    # Initialize evaluator with default models
+    evaluator = MentalHealthEvaluator(models=['openai', 'deepseek'])
     
     # Run evaluation (limit to 3 scenarios for demo)
     results = evaluator.run_evaluation(limit=3)

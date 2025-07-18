@@ -44,7 +44,8 @@ class ProjectPaths:
         # Define base directories
         self._src_dir = self.project_root / "src"
         self._data_dir = self.project_root / "data"
-        self._output_dir = self.project_root / "output"
+        self._results_dir = self.project_root / "results"
+        self._temp_dir = self.project_root / "temp"
         self._config_dir = self.project_root / "config"
         self._scripts_dir = self.project_root / "scripts"
         self._docs_dir = self.project_root / "docs"
@@ -55,12 +56,14 @@ class ProjectPaths:
     def _ensure_output_dirs(self):
         """Ensure output directories exist."""
         output_dirs = [
-            self.get_output_dir(),
+            self.get_results_dir(),
             self.get_conversations_dir(),
             self.get_evaluations_dir(),
-            self.get_analysis_dir(),
+            self.get_reports_dir(),
+            self.get_statistics_dir(),
             self.get_visualizations_dir(),
-            self.get_logs_dir(),
+            self.get_development_dir(),
+            self.get_temp_dir(),
         ]
         
         for dir_path in output_dirs:
@@ -79,9 +82,13 @@ class ProjectPaths:
         """Get the static data directory."""
         return self._data_dir
     
-    def get_output_dir(self) -> Path:
-        """Get the output directory for generated files."""
-        return self._output_dir
+    def get_results_dir(self) -> Path:
+        """Get the results directory for all outputs."""
+        return self._results_dir
+    
+    def get_temp_dir(self) -> Path:
+        """Get the temporary files directory."""
+        return self._temp_dir
     
     def get_config_dir(self) -> Path:
         """Get the configuration directory."""
@@ -114,30 +121,30 @@ class ProjectPaths:
             scenario_name += '.json'
         return self.get_scenarios_dir() / scenario_name
     
-    # Output directories
+    # Results directories
     def get_conversations_dir(self) -> Path:
-        """Get the conversations output directory."""
-        return self._output_dir / "conversations"
+        """Get the conversations directory."""
+        return self._results_dir / "conversations"
     
     def get_evaluations_dir(self) -> Path:
-        """Get the evaluations output directory."""
-        return self._output_dir / "evaluations"
+        """Get the evaluations results directory."""
+        return self._results_dir / "evaluations"
     
-    def get_analysis_dir(self) -> Path:
-        """Get the analysis output directory."""
-        return self._output_dir / "analysis"
+    def get_reports_dir(self) -> Path:
+        """Get the reports results directory."""
+        return self._results_dir / "reports"
+    
+    def get_statistics_dir(self) -> Path:
+        """Get the statistics results directory."""
+        return self._results_dir / "statistics"
     
     def get_visualizations_dir(self) -> Path:
-        """Get the visualizations output directory."""
-        return self._output_dir / "visualizations"
+        """Get the visualizations results directory."""
+        return self._results_dir / "visualizations"
     
-    def get_logs_dir(self) -> Path:
-        """Get the logs output directory."""
-        return self._output_dir / "logs"
-    
-    def get_temp_dir(self) -> Path:
-        """Get the temporary files directory."""
-        return self._output_dir / "temp"
+    def get_development_dir(self) -> Path:
+        """Get the development/testing results directory."""
+        return self._results_dir / "development"
     
     # Configuration directories
     def get_models_config_dir(self) -> Path:
@@ -197,10 +204,10 @@ class ProjectPaths:
             Path to analysis report file
         """
         if timestamp:
-            filename = f"analysis_report_{timestamp}.txt"
+            filename = f"research_report_{timestamp}.txt"
         else:
-            filename = "analysis_report.txt"
-        return self.get_analysis_dir() / filename
+            filename = "research_report.txt"
+        return self.get_reports_dir() / filename
     
     def get_statistical_analysis_file(self, timestamp: Optional[str] = None) -> Path:
         """
@@ -216,7 +223,7 @@ class ProjectPaths:
             filename = f"statistical_analysis_{timestamp}.json"
         else:
             filename = "statistical_analysis.json"
-        return self.get_analysis_dir() / filename
+        return self.get_statistics_dir() / filename
     
     def get_model_strengths_file(self, timestamp: Optional[str] = None) -> Path:
         """
@@ -305,18 +312,34 @@ class ProjectPaths:
         except ValueError:
             return path
     
-    def is_output_file(self, path: Path) -> bool:
+    def is_results_file(self, path: Path) -> bool:
         """
-        Check if a path is in the output directory.
+        Check if a path is in the results directory.
         
         Args:
             path: Path to check
             
         Returns:
-            True if path is in output directory
+            True if path is in results directory
         """
         try:
-            path.relative_to(self.get_output_dir())
+            path.relative_to(self.get_results_dir())
+            return True
+        except ValueError:
+            return False
+    
+    def is_temp_file(self, path: Path) -> bool:
+        """
+        Check if a path is in the temp directory.
+        
+        Args:
+            path: Path to check
+            
+        Returns:
+            True if path is in temp directory
+        """
+        try:
+            path.relative_to(self.get_temp_dir())
             return True
         except ValueError:
             return False
@@ -342,19 +365,37 @@ class ProjectPaths:
         """
         return path.stat().st_size if path.exists() else 0
     
-    def list_output_files(self) -> list[Path]:
+    def list_results_files(self) -> list[Path]:
         """
-        List all files in the output directory.
+        List all files in the results directory.
         
         Returns:
-            List of file paths in output directory
+            List of file paths in results directory
         """
-        output_dir = self.get_output_dir()
-        if not output_dir.exists():
+        results_dir = self.get_results_dir()
+        if not results_dir.exists():
             return []
         
         files = []
-        for item in output_dir.rglob("*"):
+        for item in results_dir.rglob("*"):
+            if item.is_file():
+                files.append(item)
+        
+        return sorted(files)
+    
+    def list_temp_files(self) -> list[Path]:
+        """
+        List all files in the temp directory.
+        
+        Returns:
+            List of file paths in temp directory
+        """
+        temp_dir = self.get_temp_dir()
+        if not temp_dir.exists():
+            return []
+        
+        files = []
+        for item in temp_dir.rglob("*"):
             if item.is_file():
                 files.append(item)
         
@@ -413,9 +454,14 @@ def get_data_dir() -> Path:
     return get_paths().get_data_dir()
 
 
-def get_output_dir() -> Path:
-    """Get the output directory."""
-    return get_paths().get_output_dir()
+def get_results_dir() -> Path:
+    """Get the results directory."""
+    return get_paths().get_results_dir()
+
+
+def get_development_dir() -> Path:
+    """Get the development/testing results directory."""
+    return get_paths().get_development_dir()
 
 
 def get_config_dir() -> Path:
@@ -429,28 +475,33 @@ def get_scenarios_dir() -> Path:
 
 
 def get_evaluations_dir() -> Path:
-    """Get the evaluations output directory."""
+    """Get the evaluations results directory."""
     return get_paths().get_evaluations_dir()
 
 
-def get_analysis_dir() -> Path:
-    """Get the analysis output directory."""
-    return get_paths().get_analysis_dir()
+def get_reports_dir() -> Path:
+    """Get the reports results directory."""
+    return get_paths().get_reports_dir()
+
+
+def get_statistics_dir() -> Path:
+    """Get the statistics results directory."""
+    return get_paths().get_statistics_dir()
 
 
 def get_visualizations_dir() -> Path:
-    """Get the visualizations output directory."""
+    """Get the visualizations results directory."""
     return get_paths().get_visualizations_dir()
 
 
 def get_conversations_dir() -> Path:
-    """Get the conversations output directory."""
+    """Get the conversations directory."""
     return get_paths().get_conversations_dir()
 
 
-def get_logs_dir() -> Path:
-    """Get the logs output directory."""
-    return get_paths().get_logs_dir()
+def get_temp_dir() -> Path:
+    """Get the temporary files directory."""
+    return get_paths().get_temp_dir()
 
 
 # Example usage
@@ -462,16 +513,28 @@ if __name__ == "__main__":
     print(f"Project Root: {paths.get_project_root()}")
     print(f"Source Code: {paths.get_src_dir()}")
     print(f"Static Data: {paths.get_data_dir()}")
-    print(f"Output: {paths.get_output_dir()}")
+    print(f"Results: {paths.get_results_dir()}")
+    print(f"Temp: {paths.get_temp_dir()}")
     print(f"Config: {paths.get_config_dir()}")
-    print()
-    
-    print("Output Subdirectories:")
+    print(f"Development: {paths.get_development_dir()}")
     print(f"Conversations: {paths.get_conversations_dir()}")
     print(f"Evaluations: {paths.get_evaluations_dir()}")
-    print(f"Analysis: {paths.get_analysis_dir()}")
+    print(f"Reports: {paths.get_reports_dir()}")
+    print(f"Statistics: {paths.get_statistics_dir()}")
     print(f"Visualizations: {paths.get_visualizations_dir()}")
-    print(f"Logs: {paths.get_logs_dir()}")
+    print(f"Temp: {paths.get_temp_dir()}")
+
+    print()
+    
+    print("Results Subdirectories:")
+    print(f"Evaluations: {paths.get_evaluations_dir()}")
+    print(f"Reports: {paths.get_reports_dir()}")
+    print(f"Statistics: {paths.get_statistics_dir()}")
+    print(f"Visualizations: {paths.get_visualizations_dir()}")
+    print()
+    print("Generated Subdirectories:")
+    print(f"Conversations: {paths.get_conversations_dir()}")
+    print(f"Temp: {paths.get_temp_dir()}")
     print()
     
     print("Example File Paths:")
