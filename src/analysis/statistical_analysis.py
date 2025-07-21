@@ -899,7 +899,8 @@ def analyze_results(results_data: Dict[str, Any]) -> SimpleStatisticalResults:
         first_scenario = scenarios[0]
         
         # Check if it has the new multi-model structure
-        if hasattr(first_scenario, 'model_evaluations') and first_scenario.model_evaluations:
+        if (hasattr(first_scenario, 'model_evaluations') and first_scenario.model_evaluations) or \
+           (isinstance(first_scenario, dict) and 'model_evaluations' in first_scenario and first_scenario['model_evaluations']):
             logger.info("Detected multi-model structure, using flexible analysis")
             return analyze_multi_model_results(results_data)
         
@@ -947,8 +948,10 @@ def analyze_multi_model_results(results_data: Dict[str, Any]) -> SimpleStatistic
     
     # Extract model names from first scenario
     first_scenario = scenarios[0]
-    if hasattr(first_scenario, 'model_evaluations') and first_scenario.model_evaluations:
-        model_names = list(first_scenario.model_evaluations.keys())
+    if (hasattr(first_scenario, 'model_evaluations') and first_scenario.model_evaluations) or \
+       (isinstance(first_scenario, dict) and 'model_evaluations' in first_scenario and first_scenario['model_evaluations']):
+        model_evaluations = first_scenario.model_evaluations if hasattr(first_scenario, 'model_evaluations') else first_scenario['model_evaluations']
+        model_names = list(model_evaluations.keys())
     else:
         # Fallback to detecting from individual fields
         model_names = []
@@ -984,9 +987,11 @@ def analyze_multi_model_results(results_data: Dict[str, Any]) -> SimpleStatistic
     } for model in model_names}
     
     for scenario in scenarios:
-        if hasattr(scenario, 'model_evaluations') and scenario.model_evaluations:
+        if (hasattr(scenario, 'model_evaluations') and scenario.model_evaluations) or \
+           (isinstance(scenario, dict) and 'model_evaluations' in scenario and scenario['model_evaluations']):
             # New structure with model_evaluations dict
-            for model_name, evaluation in scenario.model_evaluations.items():
+            model_evaluations = scenario.model_evaluations if hasattr(scenario, 'model_evaluations') else scenario['model_evaluations']
+            for model_name, evaluation in model_evaluations.items():
                 if model_name in model_names:
                     if isinstance(evaluation, dict):
                         # Get composite score, with fallback calculation if missing

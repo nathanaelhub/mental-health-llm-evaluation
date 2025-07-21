@@ -240,3 +240,6 @@ test_results/
 
 # Backup directories
 backup_*/
+
+# Claude Code configuration
+CLAUDE.md
