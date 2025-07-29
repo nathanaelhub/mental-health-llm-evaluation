@@ -27,6 +27,7 @@ import time
 import os
 import sys
 import re
+import unicodedata
 from datetime import datetime
 from typing import Dict, List, Optional, Any
 from dataclasses import dataclass, asdict
@@ -53,6 +54,39 @@ except ImportError:
     GemmaClient = None
     HAS_GEMMA = False
 
+def get_display_width(text: str) -> int:
+    """
+    Calculate the actual display width of text including Unicode characters.
+    Emojis and wide characters count as 2, normal characters as 1.
+    """
+    width = 0
+    for char in text:
+        if unicodedata.east_asian_width(char) in ('F', 'W'):
+            width += 2  # Full-width or Wide characters
+        elif unicodedata.category(char).startswith('So'):
+            width += 2  # Symbols (including emojis)
+        else:
+            width += 1  # Normal characters
+    return width
+
+def pad_to_display_width(text: str, target_width: int, align: str = 'left') -> str:
+    """
+    Pad text to exact display width, accounting for Unicode character widths.
+    """
+    current_width = get_display_width(text)
+    padding_needed = target_width - current_width
+    
+    if padding_needed <= 0:
+        return text[:target_width] if len(text) > target_width else text
+    
+    if align == 'left':
+        return text + ' ' * padding_needed
+    elif align == 'right':
+        return ' ' * padding_needed + text
+    else:  # center
+        left_pad = padding_needed // 2
+        right_pad = padding_needed - left_pad
+        return ' ' * left_pad + text + ' ' * right_pad
 
 @dataclass
 class SimpleScore:
@@ -413,10 +447,12 @@ class SimpleModelComparator:
             return filename
         except Exception as e:
             print(f"⚠️  Failed to save responses: {e}")
+            import traceback
+            traceback.print_exc()
             return ""
     
     def display_results(self, result: ComparisonResult):
-        """Display comparison results."""
+        """Display comparison results with fancy box formatting."""
         model_emojis = {
             'openai': '🌐',
             'claude': '🤖',
@@ -424,27 +460,79 @@ class SimpleModelComparator:
             'gemma': '💎'
         }
         
-        print(f"\n")
-        for model_key, response in result.responses.items():
+        # Calculate box width based on content with proper Unicode handling
+        # Target: ║ model_col (18 display chars) │ content_col (50 display chars) ║ = 72 total
+        model_col_width = 18  # Display width for model column
+        content_col_width = 50  # Display width for content column
+        box_width = model_col_width + content_col_width + 4  # +4 for ║ │ ║ and space
+        inner_width = box_width - 2  # box_width - 2 for the ║ characters
+        
+        # Print main header with dynamic width
+        header_line = "╔" + "═" * inner_width + "╗"
+        separator_line = "╠" + "═" * inner_width + "╣"
+        footer_line = "╚" + "═" * inner_width + "╝"
+        
+        print(f"\n{header_line}")
+        title_padded = pad_to_display_width("Model Comparison Results", inner_width, align='center')
+        print(f"║{title_padded}║")
+        print(separator_line)
+        
+        # Sort responses by score (highest first)
+        sorted_responses = sorted(
+            result.responses.items(), 
+            key=lambda x: x[1].score.overall if not x[1].error else -1, 
+            reverse=True
+        )
+        
+        for i, (model_key, response) in enumerate(sorted_responses):
             emoji = model_emojis.get(model_key, '🤖')
             
             if response.error:
-                print(f"{emoji} {response.model_name}: ERROR - {response.error}")
+                # Error display - use proper Unicode width formatting
+                model_display = f"{emoji} {response.model_name}"
+                error_msg = f"ERROR: {response.error[:35]}"  # Shorter to fit width
+                model_padded = pad_to_display_width(model_display, model_col_width)
+                error_padded = pad_to_display_width(error_msg, content_col_width)
+                print(f"║ {model_padded} │ {error_padded} ║")
             else:
-                print(f"{emoji} {response.model_name}: {response.content}")
-                print(f"   Score: {response.score.overall:.1f}/10 (Empathy: {response.score.empathy:.1f}, "
-                      f"Helpful: {response.score.helpfulness:.1f}, Safe: {response.score.safety:.1f}, "
-                      f"Clear: {response.score.clarity:.1f})")
+                # Model name and score line - use proper Unicode width formatting
+                model_display = f"{emoji} {response.model_name}"
+                score_display = f"Score: {response.score.overall:.1f}/10"
+                model_padded = pad_to_display_width(model_display, model_col_width)
+                score_padded = pad_to_display_width(score_display, content_col_width)
+                print(f"║ {model_padded} │ {score_padded} ║")
+                
+                # Detailed scores line - align with pipe character
+                empathy = f"E:{response.score.empathy:.1f}"
+                helpful = f"H:{response.score.helpfulness:.1f}"
+                safe = f"S:{response.score.safety:.1f}"
+                clear = f"C:{response.score.clarity:.1f}"
+                details_display = f"{empathy} | {helpful} | {safe} | {clear}"
+                empty_model = pad_to_display_width("", model_col_width)
+                details_padded = pad_to_display_width(details_display, content_col_width)
+                print(f"║ {empty_model} │ {details_padded} ║")
+            
+            # Add separator between models (except for last one)
+            if i < len(sorted_responses) - 1:
+                print(separator_line)
         
-        # Show winner
+        # Winner section
         if result.winner:
+            print(separator_line)
             winner_emoji = model_emojis.get(result.winner, '🤖')
             winner_name = result.responses[result.winner].model_name
-            print(f"\n🏆 Winner: {winner_name} ({result.winner_reason})")
+            winner_text = f"🏆 Winner: {winner_name} ({result.winner_reason})"
+            winner_padded = pad_to_display_width(winner_text, inner_width, align='center')
+            print(f"║ {winner_padded} ║")
         
-        # Show saved file
-        if result.saved_file:
-            print(f"💾 Full responses saved to: {result.saved_file}")
+        # Footer
+        print(footer_line)
+        
+        # Show saved file outside the box
+        if result.saved_file and os.path.exists(result.saved_file):
+            print(f"\n💾 Full responses saved to: {result.saved_file}")
+        elif result.saved_file:
+            print(f"\n⚠️  File saving reported but file not found: {result.saved_file}")
     
     async def close(self):
         """Clean up resources."""

@@ -190,6 +190,9 @@ Thumbs.db
 docs/build/
 docs/source/_build/
 
+# Phase documentation (development notes)
+docs/phases/
+
 # Profiling data
 *.prof
 

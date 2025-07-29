@@ -6,32 +6,43 @@ This capstone project evaluates the comparative effectiveness of cloud-based ver
 
 ## Research Questions
 
-1. **Primary**: How do local LLMs (DeepSeek) compare to cloud LLMs (OpenAI GPT) in therapeutic conversation quality for mental health support?
+1. **Primary**: How do local/open-source LLMs (DeepSeek, Gemma) compare to commercial cloud LLMs (OpenAI GPT-4, Claude) in therapeutic conversation quality for mental health support?
 
 2. **Secondary**:
    - What are the cost-benefit trade-offs between local and cloud LLM deployment?
    - How do models perform across different mental health condition categories (anxiety, depression, crisis)?
    - What safety considerations arise when deploying LLMs for mental health applications?
+   - Which model provides the best balance of quality, cost, and deployment flexibility?
 
 ## Methodology
 
 ### Experimental Design
 
 **Design Type**: Comparative cross-sectional study
-**Comparison**: Between-subjects comparison of two LLM systems
-**Sample Size**: 10 standardized mental health scenarios × 1 response per model = 20 total responses
+**Comparison**: Between-subjects comparison of four LLM systems
+**Sample Size**: 10 standardized mental health scenarios × 1 response per model = 40 total responses
 
 ### Models Under Evaluation
 
-1. **Cloud Model**: OpenAI GPT-4o-mini
-   - Rationale: Cost-effective, widely-used commercial model
+1. **OpenAI GPT-4**: Cloud-based commercial model
+   - Rationale: Industry-leading performance benchmark
    - Access: API-based, requires internet connectivity
    - Cost: Per-token pricing model
 
-2. **Local Model**: DeepSeek R1
+2. **Claude (Anthropic)**: Cloud-based commercial model
+   - Rationale: Strong safety focus and conversational abilities
+   - Access: API-based, requires internet connectivity
+   - Cost: Per-token pricing model
+
+3. **DeepSeek**: Local/cloud hybrid model
    - Rationale: High-performing open-source model for local deployment
+   - Access: Self-hosted or API, offline capability
+   - Cost: Free for local deployment
+
+4. **Gemma (Google)**: Open-source model
+   - Rationale: Lightweight, efficient model for resource-constrained deployment
    - Access: Self-hosted, offline capability
-   - Cost: Hardware/energy only, no per-use fees
+   - Cost: Free for local deployment
 
 ### Evaluation Scenarios
 
@@ -83,6 +94,8 @@ This capstone project evaluates the comparative effectiveness of cloud-based ver
 - **Error Rate**: Failed response percentage
 
 ### Statistical Analysis Plan
+
+**Note on Statistical Power**: This is an exploratory pilot study with n=10 conversations per model. Effect sizes are reported instead of p-values due to limited sample size. Future research should expand to n=20+ for adequate statistical power.
 
 #### Descriptive Statistics
 - Mean, median, standard deviation for all metrics

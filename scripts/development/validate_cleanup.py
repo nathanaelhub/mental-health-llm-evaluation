@@ -14,7 +14,7 @@ from datetime import datetime
 from typing import List, Tuple, Dict, Any
 
 # Add parent directory to path to import from src
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..'))
 
 # Color codes for terminal output
 class Colors:

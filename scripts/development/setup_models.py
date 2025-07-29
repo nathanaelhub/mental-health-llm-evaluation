@@ -27,7 +27,7 @@ from typing import Dict, List, Tuple, Optional
 from dotenv import load_dotenv
 
 # Add parent directory to path
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..'))
 
 
 class ModelConfigChecker:

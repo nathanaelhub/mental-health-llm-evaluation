@@ -57,7 +57,8 @@
       "Bash(test:*)",
       "Bash(timeout 30 python scripts/run_research.py --limit 1 --output test_results/ --models deepseek)",
       "Bash(timeout 60 python:*)",
-      "Bash(claude update)"
+      "Bash(claude update)",
+      "Bash(timeout:*)"
     ],
     "deny": []
   }

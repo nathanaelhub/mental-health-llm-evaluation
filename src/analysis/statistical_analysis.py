@@ -1007,17 +1007,40 @@ def analyze_multi_model_results(results_data: Dict[str, Any]) -> SimpleStatistic
                             composite_score = (empathy * 0.3 + therapeutic * 0.25 + safety * 0.35 + clarity * 0.1)
                             logger.info(f"Calculated fallback composite score for {model_name}: {composite_score:.2f}")
                         
-                        model_scores[model_name]['composite'].append(composite_score or 0.0)
-                        model_scores[model_name]['empathy'].append(evaluation.get('empathy', 0.0) or 0.0)
-                        model_scores[model_name]['therapeutic'].append(evaluation.get('therapeutic', 0.0) or 0.0)
-                        model_scores[model_name]['safety'].append(evaluation.get('safety', 0.0) or 0.0)
-                        model_scores[model_name]['clarity'].append(evaluation.get('clarity', 0.0) or 0.0)
+                        # Defensive programming: ensure no None values get through
+                        composite_val = composite_score if composite_score is not None else 0.0
+                        empathy_val = evaluation.get('empathy', 0.0)
+                        empathy_val = empathy_val if empathy_val is not None else 0.0
+                        therapeutic_val = evaluation.get('therapeutic', 0.0)
+                        therapeutic_val = therapeutic_val if therapeutic_val is not None else 0.0
+                        safety_val = evaluation.get('safety', 0.0)
+                        safety_val = safety_val if safety_val is not None else 0.0
+                        clarity_val = evaluation.get('clarity', 0.0)
+                        clarity_val = clarity_val if clarity_val is not None else 0.0
+                        
+                        model_scores[model_name]['composite'].append(composite_val)
+                        model_scores[model_name]['empathy'].append(empathy_val)
+                        model_scores[model_name]['therapeutic'].append(therapeutic_val)
+                        model_scores[model_name]['safety'].append(safety_val)
+                        model_scores[model_name]['clarity'].append(clarity_val)
                     else:
-                        model_scores[model_name]['composite'].append(getattr(evaluation, 'composite_score', 0.0))
-                        model_scores[model_name]['empathy'].append(getattr(evaluation, 'empathy_score', 0.0))
-                        model_scores[model_name]['therapeutic'].append(getattr(evaluation, 'therapeutic_value_score', 0.0))
-                        model_scores[model_name]['safety'].append(getattr(evaluation, 'safety_score', 0.0))
-                        model_scores[model_name]['clarity'].append(getattr(evaluation, 'clarity_score', 0.0))
+                        # Defensive programming: ensure no None values from object attributes
+                        composite_val = getattr(evaluation, 'composite_score', 0.0)
+                        composite_val = composite_val if composite_val is not None else 0.0
+                        empathy_val = getattr(evaluation, 'empathy_score', 0.0)
+                        empathy_val = empathy_val if empathy_val is not None else 0.0
+                        therapeutic_val = getattr(evaluation, 'therapeutic_value_score', 0.0)
+                        therapeutic_val = therapeutic_val if therapeutic_val is not None else 0.0
+                        safety_val = getattr(evaluation, 'safety_score', 0.0)
+                        safety_val = safety_val if safety_val is not None else 0.0
+                        clarity_val = getattr(evaluation, 'clarity_score', 0.0)
+                        clarity_val = clarity_val if clarity_val is not None else 0.0
+                        
+                        model_scores[model_name]['composite'].append(composite_val)
+                        model_scores[model_name]['empathy'].append(empathy_val)
+                        model_scores[model_name]['therapeutic'].append(therapeutic_val)
+                        model_scores[model_name]['safety'].append(safety_val)
+                        model_scores[model_name]['clarity'].append(clarity_val)
         else:
             # Old structure with individual fields
             for model_name in model_names:
@@ -1038,17 +1061,40 @@ def analyze_multi_model_results(results_data: Dict[str, Any]) -> SimpleStatistic
                             composite_score = (empathy * 0.3 + therapeutic * 0.25 + safety * 0.35 + clarity * 0.1)
                             logger.info(f"Calculated fallback composite score for {model_name}: {composite_score:.2f}")
                         
-                        model_scores[model_name]['composite'].append(composite_score or 0.0)
-                        model_scores[model_name]['empathy'].append(evaluation.get('empathy', 0.0) or 0.0)
-                        model_scores[model_name]['therapeutic'].append(evaluation.get('therapeutic', 0.0) or 0.0)
-                        model_scores[model_name]['safety'].append(evaluation.get('safety', 0.0) or 0.0)
-                        model_scores[model_name]['clarity'].append(evaluation.get('clarity', 0.0) or 0.0)
+                        # Defensive programming: ensure no None values get through
+                        composite_val = composite_score if composite_score is not None else 0.0
+                        empathy_val = evaluation.get('empathy', 0.0)
+                        empathy_val = empathy_val if empathy_val is not None else 0.0
+                        therapeutic_val = evaluation.get('therapeutic', 0.0)
+                        therapeutic_val = therapeutic_val if therapeutic_val is not None else 0.0
+                        safety_val = evaluation.get('safety', 0.0)
+                        safety_val = safety_val if safety_val is not None else 0.0
+                        clarity_val = evaluation.get('clarity', 0.0)
+                        clarity_val = clarity_val if clarity_val is not None else 0.0
+                        
+                        model_scores[model_name]['composite'].append(composite_val)
+                        model_scores[model_name]['empathy'].append(empathy_val)
+                        model_scores[model_name]['therapeutic'].append(therapeutic_val)
+                        model_scores[model_name]['safety'].append(safety_val)
+                        model_scores[model_name]['clarity'].append(clarity_val)
                     else:
-                        model_scores[model_name]['composite'].append(getattr(evaluation, 'composite_score', 0.0))
-                        model_scores[model_name]['empathy'].append(getattr(evaluation, 'empathy_score', 0.0))
-                        model_scores[model_name]['therapeutic'].append(getattr(evaluation, 'therapeutic_value_score', 0.0))
-                        model_scores[model_name]['safety'].append(getattr(evaluation, 'safety_score', 0.0))
-                        model_scores[model_name]['clarity'].append(getattr(evaluation, 'clarity_score', 0.0))
+                        # Defensive programming: ensure no None values from object attributes
+                        composite_val = getattr(evaluation, 'composite_score', 0.0)
+                        composite_val = composite_val if composite_val is not None else 0.0
+                        empathy_val = getattr(evaluation, 'empathy_score', 0.0)
+                        empathy_val = empathy_val if empathy_val is not None else 0.0
+                        therapeutic_val = getattr(evaluation, 'therapeutic_value_score', 0.0)
+                        therapeutic_val = therapeutic_val if therapeutic_val is not None else 0.0
+                        safety_val = getattr(evaluation, 'safety_score', 0.0)
+                        safety_val = safety_val if safety_val is not None else 0.0
+                        clarity_val = getattr(evaluation, 'clarity_score', 0.0)
+                        clarity_val = clarity_val if clarity_val is not None else 0.0
+                        
+                        model_scores[model_name]['composite'].append(composite_val)
+                        model_scores[model_name]['empathy'].append(empathy_val)
+                        model_scores[model_name]['therapeutic'].append(therapeutic_val)
+                        model_scores[model_name]['safety'].append(safety_val)
+                        model_scores[model_name]['clarity'].append(clarity_val)
     
     # Calculate comprehensive statistics for each model
     model_stats = {}
@@ -1057,15 +1103,23 @@ def analyze_multi_model_results(results_data: Dict[str, Any]) -> SimpleStatistic
         
         for metric_name, scores in scores_dict.items():
             if scores:
-                model_stats[model_name][metric_name] = {
-                    'mean': np.mean(scores),
-                    'std': np.std(scores),
-                    'std_dev': np.std(scores),  # For backward compatibility
-                    'count': len(scores),
-                    'min': np.min(scores),
-                    'max': np.max(scores),
-                    'median': np.median(scores)
-                }
+                # Filter out any None values as final safety check
+                clean_scores = [s for s in scores if s is not None]
+                if clean_scores:
+                    model_stats[model_name][metric_name] = {
+                        'mean': np.mean(clean_scores),
+                        'std': np.std(clean_scores),
+                        'std_dev': np.std(clean_scores),  # For backward compatibility
+                        'count': len(clean_scores),
+                        'min': np.min(clean_scores),
+                        'max': np.max(clean_scores),
+                        'median': np.median(clean_scores)
+                    }
+                else:
+                    model_stats[model_name][metric_name] = {
+                        'mean': 0.0, 'std': 0.0, 'std_dev': 0.0, 'count': 0,
+                        'min': 0.0, 'max': 0.0, 'median': 0.0
+                    }
             else:
                 model_stats[model_name][metric_name] = {
                     'mean': 0.0, 'std': 0.0, 'std_dev': 0.0, 'count': 0,
@@ -1278,39 +1332,39 @@ def analyze_openai_deepseek_results(results_data: Dict[str, Any]) -> SimpleStati
                 # Handle both object and dict formats
                 if hasattr(openai_eval, 'composite_score'):
                     openai_scores.append({
-                        'composite': openai_eval.composite_score,
-                        'empathy': openai_eval.empathy_score,
-                        'therapeutic': openai_eval.therapeutic_value_score,
-                        'safety': openai_eval.safety_score,
-                        'clarity': openai_eval.clarity_score,
+                        'composite': openai_eval.composite_score or 0.0,
+                        'empathy': openai_eval.empathy_score or 0.0,
+                        'therapeutic': openai_eval.therapeutic_value_score or 0.0,
+                        'safety': openai_eval.safety_score or 0.0,
+                        'clarity': openai_eval.clarity_score or 0.0,
                         'cost': getattr(openai_eval, 'cost_usd', None) or 0.0
                     })
                 else:
                     openai_scores.append({
-                        'composite': openai_eval.get('composite_score', 0),
-                        'empathy': openai_eval.get('empathy_score', 0),
-                        'therapeutic': openai_eval.get('therapeutic_value_score', 0),
-                        'safety': openai_eval.get('safety_score', 0),
-                        'clarity': openai_eval.get('clarity_score', 0),
+                        'composite': openai_eval.get('composite_score', 0) or 0.0,
+                        'empathy': openai_eval.get('empathy_score', 0) or 0.0,
+                        'therapeutic': openai_eval.get('therapeutic_value_score', 0) or 0.0,
+                        'safety': openai_eval.get('safety_score', 0) or 0.0,
+                        'clarity': openai_eval.get('clarity_score', 0) or 0.0,
                         'cost': openai_eval.get('cost_usd') or 0.0
                     })
                 
                 if hasattr(deepseek_eval, 'composite_score'):
                     deepseek_scores.append({
-                        'composite': deepseek_eval.composite_score,
-                        'empathy': deepseek_eval.empathy_score,
-                        'therapeutic': deepseek_eval.therapeutic_value_score,
-                        'safety': deepseek_eval.safety_score,
-                        'clarity': deepseek_eval.clarity_score,
+                        'composite': deepseek_eval.composite_score or 0.0,
+                        'empathy': deepseek_eval.empathy_score or 0.0,
+                        'therapeutic': deepseek_eval.therapeutic_value_score or 0.0,
+                        'safety': deepseek_eval.safety_score or 0.0,
+                        'clarity': deepseek_eval.clarity_score or 0.0,
                         'cost': getattr(deepseek_eval, 'cost_usd', None) or 0.0
                     })
                 else:
                     deepseek_scores.append({
-                        'composite': deepseek_eval.get('composite_score', 0),
-                        'empathy': deepseek_eval.get('empathy_score', 0),
-                        'therapeutic': deepseek_eval.get('therapeutic_value_score', 0),
-                        'safety': deepseek_eval.get('safety_score', 0),
-                        'clarity': deepseek_eval.get('clarity_score', 0),
+                        'composite': deepseek_eval.get('composite_score', 0) or 0.0,
+                        'empathy': deepseek_eval.get('empathy_score', 0) or 0.0,
+                        'therapeutic': deepseek_eval.get('therapeutic_value_score', 0) or 0.0,
+                        'safety': deepseek_eval.get('safety_score', 0) or 0.0,
+                        'clarity': deepseek_eval.get('clarity_score', 0) or 0.0,
                         'cost': deepseek_eval.get('cost_usd') or 0.0
                     })
                 

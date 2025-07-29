@@ -28,7 +28,7 @@ from typing import List, Optional
 from dotenv import load_dotenv
 
 # Add parent directory to path to import from src
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..'))
 
 from src.models.local_llm_client import LocalLLMClient
 import openai

@@ -67,7 +67,8 @@ class VisualizationConfig:
     
     def __init__(self):
         self.style = "seaborn-v0_8" if HAS_SEABORN else "default"
-        self.color_palette = ["#1f77b4", "#ff7f0e", "#2ca02c", "#d62728", "#9467bd", "#8c564b"]
+        # Distinct colors for 4 models: GPT-4 (blue), DeepSeek (orange), Claude (green), Gemma (purple)
+        self.color_palette = ["#1f77b4", "#ff7f0e", "#2ca02c", "#9467bd", "#d62728", "#8c564b"]
         self.figure_size = (12, 8)
         self.dpi = 300
         self.save_format = "png"
@@ -126,7 +127,14 @@ class SafeVisualizer:
                     if eval_key in scenario:
                         eval_data = scenario[eval_key]
                         if eval_data:
-                            model_name = model_prefix.upper()
+                            # Better display names for models
+                            display_names = {
+                                'openai': 'GPT-4',
+                                'deepseek': 'DeepSeek',
+                                'claude': 'Claude',
+                                'gemma': 'Gemma'
+                            }
+                            model_name = display_names.get(model_prefix, model_prefix.upper())
                             if model_name not in model_scores:
                                 model_scores[model_name] = {
                                     'composite': [],
@@ -464,95 +472,123 @@ class SafeVisualizer:
             return None
 
 
-def create_all_visualizations(results: Dict[str, Any], output_dir: str = 'results/plots') -> Dict[str, str]:
+def create_visualizations(results: Dict[str, Any], analysis: Dict[str, Any], output_dir: str = 'results/visualizations') -> List[str]:
     """
-    Create all available visualizations for the evaluation results.
+    Create all 5 evaluation visualization charts for mental health LLM comparison.
     
-    This function provides graceful degradation - it will create text summaries
-    even if matplotlib is not available, and will create charts if it is.
+    Creates the specific numbered charts:
+    1. Overall Comparison (1_overall_comparison.png)
+    2. Category Radar Chart (2_category_radar.png) 
+    3. Cost Effectiveness (3_cost_effectiveness.png)
+    4. Safety Metrics (4_safety_metrics.png)
+    5. Statistical Summary (5_statistical_summary.png)
     
     Args:
         results: Dictionary containing evaluation results
+        analysis: Dictionary containing statistical analysis results
         output_dir: Directory to save visualizations
         
     Returns:
-        Dictionary mapping visualization names to file paths
+        List of created chart file paths
     """
-    logger.info("Creating visualizations...")
+    if not HAS_MATPLOTLIB:
+        logger.warning("Matplotlib not available - cannot create charts")
+        return []
     
-    # Create visualizer
+    logger.info("Creating 5 evaluation charts with all evaluated models...")
+    
+    # Create output directory
+    os.makedirs(output_dir, exist_ok=True)
+    
+    # Create visualizer with enhanced config for 4 models
     visualizer = SafeVisualizer()
     
     # Track generated files
-    generated_files = {}
+    chart_files = []
     
-    # Always create text summary
+    # Extract model data from results - handle different result formats
+    model_data = _extract_all_model_data(results)
+    
+    if not model_data:
+        logger.error("No valid model data found in results")
+        return []
+    
+    logger.info(f"Found data for models: {list(model_data.keys())}")
+    
+    # Define colors for each model - Blue, Green, Orange, Purple
+    model_colors = {
+        'OpenAI': '#1f77b4',      # Blue  
+        'GPT-4': '#1f77b4',       # Blue (alternative name)
+        'Claude': '#2ca02c',      # Green
+        'DeepSeek': '#ff7f0e',    # Orange  
+        'Gemma': '#9467bd'        # Purple
+    }
+    
     try:
-        summary_path = visualizer.create_text_summary(results, output_dir)
-        if summary_path:
-            generated_files['text_summary'] = summary_path
-            logger.info(f"Created text summary: {summary_path}")
+        # 1. Overall Comparison Chart
+        chart_path = _create_overall_comparison_chart(model_data, model_colors, output_dir)
+        if chart_path:
+            chart_files.append(chart_path)
+            logger.info(f"Created 1_overall_comparison.png")
     except Exception as e:
-        logger.error(f"Failed to create text summary: {e}")
+        logger.error(f"Failed to create overall comparison chart: {e}")
     
-    # Create charts if matplotlib is available
-    if HAS_MATPLOTLIB:
-        logger.info("Matplotlib available - creating charts...")
-        
-        # Simple bar chart
-        try:
-            chart_path = visualizer.create_simple_bar_chart(results, output_dir)
-            if chart_path:
-                generated_files['bar_chart'] = chart_path
-                logger.info(f"Created bar chart: {chart_path}")
-        except Exception as e:
-            logger.error(f"Failed to create bar chart: {e}")
-        
-        # Metric comparison
-        try:
-            chart_path = visualizer.create_metric_comparison(results, output_dir)
-            if chart_path:
-                generated_files['metric_comparison'] = chart_path
-                logger.info(f"Created metric comparison: {chart_path}")
-        except Exception as e:
-            logger.error(f"Failed to create metric comparison: {e}")
-        
-        # Cost analysis
-        try:
-            chart_path = visualizer.create_cost_analysis_chart(results, output_dir)
-            if chart_path:
-                generated_files['cost_analysis'] = chart_path
-                logger.info(f"Created cost analysis: {chart_path}")
-        except Exception as e:
-            logger.error(f"Failed to create cost analysis: {e}")
-    
-    else:
-        logger.warning("Matplotlib not available - skipping chart generation")
-    
-    # Create JSON summary of generated files
     try:
+        # 2. Category Radar Chart  
+        chart_path = _create_category_radar_chart(model_data, model_colors, output_dir)
+        if chart_path:
+            chart_files.append(chart_path)
+            logger.info(f"Created 2_category_radar.png")
+    except Exception as e:
+        logger.error(f"Failed to create category radar chart: {e}")
+    
+    try:
+        # 3. Cost Effectiveness Chart
+        chart_path = _create_cost_effectiveness_chart(model_data, model_colors, output_dir)
+        if chart_path:
+            chart_files.append(chart_path)
+            logger.info(f"Created 3_cost_effectiveness.png")
+    except Exception as e:
+        logger.error(f"Failed to create cost effectiveness chart: {e}")
+    
+    try:
+        # 4. Safety Metrics Chart
+        chart_path = _create_safety_metrics_chart(model_data, model_colors, output_dir)
+        if chart_path:
+            chart_files.append(chart_path)
+            logger.info(f"Created 4_safety_metrics.png")
+    except Exception as e:
+        logger.error(f"Failed to create safety metrics chart: {e}")
+    
+    try:
+        # 5. Statistical Summary Chart
+        chart_path = _create_statistical_summary_chart(model_data, analysis, model_colors, output_dir)
+        if chart_path:
+            chart_files.append(chart_path)
+            logger.info(f"Created 5_statistical_summary.png")
+    except Exception as e:
+        logger.error(f"Failed to create statistical summary chart: {e}")
+    
+    # Create text summary and JSON metadata
+    try:
+        visualizer.create_text_summary(results, output_dir)
+        
         summary_info = {
             'generated_at': datetime.now().isoformat(),
-            'has_matplotlib': HAS_MATPLOTLIB,
-            'has_plotly': HAS_PLOTLY,
-            'has_seaborn': HAS_SEABORN,
-            'has_pandas': HAS_PANDAS,
-            'has_numpy': HAS_NUMPY,
-            'files_generated': generated_files
+            'models_included': list(model_data.keys()),
+            'charts_created': len(chart_files),
+            'chart_files': [os.path.basename(f) for f in chart_files]
         }
         
         summary_json_path = os.path.join(output_dir, 'visualization_summary.json')
         with open(summary_json_path, 'w') as f:
             json.dump(summary_info, f, indent=2)
-        
-        generated_files['summary_json'] = summary_json_path
-        
+            
     except Exception as e:
-        logger.error(f"Failed to create JSON summary: {e}")
+        logger.error(f"Failed to create summary files: {e}")
     
-    logger.info(f"Generated {len(generated_files)} visualization files")
-    
-    return generated_files
+    logger.info(f"Successfully created {len(chart_files)} visualization charts")
+    return chart_files
 
 
 # Backward compatibility - provide the expected interface
@@ -563,7 +599,521 @@ def create_presentation_slides(*args, **kwargs):
 
 def create_comprehensive_dashboard(results, statistical_results=None, results_dir="./visualizations"):
     """Backward compatibility function."""
-    return create_all_visualizations(results, results_dir)
+    return create_visualizations(results, statistical_results or {}, results_dir)
+
+def create_all_visualizations(results: Dict[str, Any], output_dir: str = 'results/visualizations') -> Dict[str, str]:
+    """Backward compatibility wrapper for create_visualizations."""
+    chart_files = create_visualizations(results, {}, output_dir)
+    return {'chart_files': chart_files}
+
+
+# Helper functions for creating specific charts
+
+def _extract_all_model_data(results: Dict[str, Any]) -> Dict[str, Dict[str, List[float]]]:
+    """Extract model data from results in various formats."""
+    model_data = {}
+    
+    if not results:
+        return model_data
+    
+    # Handle new format: {'scenarios': [{'model_evaluations': {'openai': {...}, 'deepseek': {...}}}]}
+    if 'scenarios' in results:
+        scenarios = results['scenarios']
+        
+        for scenario in scenarios:
+            # New format with model_evaluations
+            if 'model_evaluations' in scenario:
+                model_evals = scenario['model_evaluations']
+                for model_key, evaluation in model_evals.items():
+                    if evaluation:
+                        # Map internal model keys to display names
+                        display_names = {
+                            'openai': 'OpenAI',
+                            'deepseek': 'DeepSeek', 
+                            'claude': 'Claude',
+                            'gemma': 'Gemma'
+                        }
+                        model_name = display_names.get(model_key.lower(), model_key.title())
+                        
+                        if model_name not in model_data:
+                            model_data[model_name] = {
+                                'composite': [], 'empathy': [], 'therapeutic': [],
+                                'safety': [], 'clarity': [], 'cost': [], 'response_time': []
+                            }
+                        
+                        # Extract scores safely
+                        model_data[model_name]['composite'].append(_safe_get_score(evaluation, 'composite_score'))
+                        model_data[model_name]['empathy'].append(_safe_get_score(evaluation, 'empathy_score'))
+                        model_data[model_name]['therapeutic'].append(_safe_get_score(evaluation, 'therapeutic_value_score'))
+                        model_data[model_name]['safety'].append(_safe_get_score(evaluation, 'safety_score'))
+                        model_data[model_name]['clarity'].append(_safe_get_score(evaluation, 'clarity_score'))
+                        model_data[model_name]['cost'].append(_safe_get_score(evaluation, 'cost_usd', 0.0))
+                        model_data[model_name]['response_time'].append(_safe_get_score(evaluation, 'response_time_ms', 0.0))
+            
+            # Old format with individual model keys
+            else:
+                for model_prefix in ['openai', 'deepseek', 'claude', 'gemma']:
+                    eval_key = f'{model_prefix}_evaluation'
+                    if eval_key in scenario:
+                        evaluation = scenario[eval_key]
+                        if evaluation:
+                            display_names = {'openai': 'OpenAI', 'deepseek': 'DeepSeek', 'claude': 'Claude', 'gemma': 'Gemma'}
+                            model_name = display_names.get(model_prefix, model_prefix.title())
+                            
+                            if model_name not in model_data:
+                                model_data[model_name] = {
+                                    'composite': [], 'empathy': [], 'therapeutic': [],
+                                    'safety': [], 'clarity': [], 'cost': [], 'response_time': []
+                                }
+                            
+                            model_data[model_name]['composite'].append(_safe_get_score(evaluation, 'composite_score'))
+                            model_data[model_name]['empathy'].append(_safe_get_score(evaluation, 'empathy_score'))
+                            model_data[model_name]['therapeutic'].append(_safe_get_score(evaluation, 'therapeutic_value_score'))
+                            model_data[model_name]['safety'].append(_safe_get_score(evaluation, 'safety_score'))
+                            model_data[model_name]['clarity'].append(_safe_get_score(evaluation, 'clarity_score'))
+                            model_data[model_name]['cost'].append(_safe_get_score(evaluation, 'cost_usd', 0.0))
+                            model_data[model_name]['response_time'].append(_safe_get_score(evaluation, 'response_time_ms', 0.0))
+    
+    return model_data
+
+def _safe_get_score(data: Any, key: str, default: float = 0.0) -> float:
+    """Safely get a score from data."""
+    if isinstance(data, dict):
+        value = data.get(key, default)
+    elif hasattr(data, key):
+        value = getattr(data, key, default)
+    else:
+        value = default
+    
+    try:
+        return float(value) if value is not None else default
+    except (ValueError, TypeError):
+        return default
+
+def _safe_mean(values: List[float]) -> float:
+    """Safely calculate mean."""
+    if not values:
+        return 0.0
+    return sum(values) / len(values)
+
+def _safe_std(values: List[float]) -> float:
+    """Safely calculate standard deviation."""
+    if not values or len(values) < 2:
+        return 0.0
+    
+    mean = _safe_mean(values)
+    variance = sum((x - mean) ** 2 for x in values) / (len(values) - 1)
+    return variance ** 0.5
+
+def _create_overall_comparison_chart(model_data: Dict[str, Dict[str, List[float]]], 
+                                   model_colors: Dict[str, str], output_dir: str) -> Optional[str]:
+    """Create 1_overall_comparison.png - Bar chart of all metrics for all models."""
+    try:
+        import matplotlib.pyplot as plt
+        import numpy as np
+        
+        metrics = ['empathy', 'therapeutic', 'safety', 'clarity', 'composite']
+        metric_labels = ['Empathy', 'Therapeutic\nValue', 'Safety', 'Clarity', 'Composite\nScore']
+        
+        models = list(model_data.keys())
+        n_models = len(models)
+        n_metrics = len(metrics)
+        
+        # Calculate means and stds
+        means = []
+        stds = []
+        colors = []
+        
+        for model in models:
+            model_means = []
+            model_stds = []
+            for metric in metrics:
+                values = model_data[model].get(metric, [])
+                model_means.append(_safe_mean(values))
+                model_stds.append(_safe_std(values))
+            means.append(model_means)
+            stds.append(model_stds)
+            colors.append(model_colors.get(model, '#1f77b4'))
+        
+        # Create the plot
+        fig, ax = plt.subplots(figsize=(14, 8))
+        
+        # Bar positions
+        x = np.arange(n_metrics)
+        width = 0.8 / n_models
+        
+        # Create bars for each model
+        for i, (model, model_means_list, model_stds_list, color) in enumerate(zip(models, means, stds, colors)):
+            offset = (i - n_models/2 + 0.5) * width
+            bars = ax.bar(x + offset, model_means_list, width, 
+                         yerr=model_stds_list, capsize=3, alpha=0.8,
+                         color=color, label=model, edgecolor='white', linewidth=0.5)
+            
+            # Add value labels on bars
+            for bar, mean_val in zip(bars, model_means_list):
+                height = bar.get_height()
+                if height > 0:
+                    ax.text(bar.get_x() + bar.get_width()/2., height + 0.2,
+                           f'{mean_val:.1f}', ha='center', va='bottom', fontsize=9, fontweight='bold')
+        
+        # Customize the plot
+        ax.set_title('Mental Health LLM Performance Comparison\nby Therapeutic Quality Metrics', 
+                    fontsize=16, fontweight='bold', pad=20)
+        ax.set_ylabel('Score (0-10 scale)', fontsize=12)
+        ax.set_xlabel('Evaluation Metrics', fontsize=12)
+        ax.set_xticks(x)
+        ax.set_xticklabels(metric_labels)
+        ax.set_ylim(0, 11)
+        ax.grid(True, alpha=0.3, axis='y')
+        ax.legend(loc='upper right', framealpha=0.9)
+        
+        # Add significance indicators if there are differences
+        if n_models > 1:
+            ax.text(0.02, 0.95, '*** p<0.001', transform=ax.transAxes, 
+                   fontsize=10, verticalalignment='top')
+        
+        plt.tight_layout()
+        
+        # Save the chart
+        chart_path = os.path.join(output_dir, '1_overall_comparison.png')
+        plt.savefig(chart_path, dpi=300, bbox_inches='tight', facecolor='white')
+        plt.close()
+        
+        return chart_path
+        
+    except Exception as e:
+        logger.error(f"Error creating overall comparison chart: {e}")
+        return None
+
+def _create_category_radar_chart(model_data: Dict[str, Dict[str, List[float]]], 
+                               model_colors: Dict[str, str], output_dir: str) -> Optional[str]:
+    """Create 2_category_radar.png - Radar chart showing all models across metrics."""
+    try:
+        import matplotlib.pyplot as plt
+        import numpy as np
+        
+        metrics = ['empathy', 'therapeutic', 'safety', 'clarity']
+        metric_labels = ['Empathy', 'Therapeutic\nValue', 'Safety', 'Clarity']
+        
+        models = list(model_data.keys())
+        
+        # Calculate means for each model
+        model_scores = {}
+        for model in models:
+            scores = []
+            for metric in metrics:
+                values = model_data[model].get(metric, [])
+                scores.append(_safe_mean(values))
+            model_scores[model] = scores
+        
+        # Set up radar chart
+        fig, ax = plt.subplots(figsize=(10, 10), subplot_kw=dict(projection='polar'))
+        
+        # Calculate angles for each metric
+        angles = np.linspace(0, 2 * np.pi, len(metrics), endpoint=False).tolist()
+        angles += angles[:1]  # Complete the circle
+        
+        # Plot each model
+        for model in models:
+            scores = model_scores[model]
+            scores += scores[:1]  # Complete the circle
+            
+            color = model_colors.get(model, '#1f77b4')
+            ax.plot(angles, scores, 'o-', linewidth=2, label=model, color=color)
+            ax.fill(angles, scores, alpha=0.25, color=color)
+        
+        # Customize the radar chart
+        ax.set_xticks(angles[:-1])
+        ax.set_xticklabels(metric_labels)
+        ax.set_ylim(0, 10)
+        ax.set_yticks([2, 4, 6, 8, 10])
+        ax.set_yticklabels(['2', '4', '6', '8', '10'])
+        ax.grid(True)
+        
+        # Add title and legend
+        plt.title('Mental Health LLM Performance\nRadar Chart by Therapeutic Metrics', 
+                 size=16, fontweight='bold', y=1.08)
+        plt.legend(loc='upper right', bbox_to_anchor=(1.2, 1.0))
+        
+        plt.tight_layout()
+        
+        # Save the chart
+        chart_path = os.path.join(output_dir, '2_category_radar.png')
+        plt.savefig(chart_path, dpi=300, bbox_inches='tight', facecolor='white')
+        plt.close()
+        
+        return chart_path
+        
+    except Exception as e:
+        logger.error(f"Error creating category radar chart: {e}")
+        return None
+
+def _create_cost_effectiveness_chart(model_data: Dict[str, Dict[str, List[float]]], 
+                                   model_colors: Dict[str, str], output_dir: str) -> Optional[str]:
+    """Create 3_cost_effectiveness.png - Scatter plot of performance vs cost."""
+    try:
+        import matplotlib.pyplot as plt
+        import numpy as np
+        
+        models = list(model_data.keys())
+        
+        # Calculate composite scores and costs
+        composite_scores = []
+        costs = []
+        colors = []
+        labels = []
+        
+        for model in models:
+            composite_vals = model_data[model].get('composite', [])
+            cost_vals = model_data[model].get('cost', [])
+            
+            if composite_vals:
+                composite_score = _safe_mean(composite_vals)
+                total_cost = sum(cost_vals) if cost_vals else 0.0
+                
+                composite_scores.append(composite_score)
+                costs.append(total_cost)
+                colors.append(model_colors.get(model, '#1f77b4'))
+                labels.append(model)
+        
+        # Create scatter plot
+        fig, ax = plt.subplots(figsize=(12, 8))
+        
+        # Create scatter plot with larger points
+        scatter = ax.scatter(costs, composite_scores, c=colors, s=300, alpha=0.7, edgecolors='white', linewidth=2)
+        
+        # Add model labels
+        for i, (cost, score, label) in enumerate(zip(costs, composite_scores, labels)):
+            ax.annotate(label, (cost, score), xytext=(10, 10), textcoords='offset points',
+                       fontsize=12, fontweight='bold', ha='left')
+        
+        # Customize the plot
+        ax.set_title('Mental Health LLM Cost vs Performance Analysis', fontsize=16, fontweight='bold')
+        ax.set_xlabel('Total Cost (USD)', fontsize=12)
+        ax.set_ylabel('Composite Performance Score (0-10)', fontsize=12)
+        ax.grid(True, alpha=0.3)
+        
+        # Add efficiency quadrants
+        if costs and composite_scores:
+            mean_cost = np.mean(costs)
+            mean_score = np.mean(composite_scores)
+            
+            ax.axhline(y=mean_score, color='gray', linestyle='--', alpha=0.5)
+            ax.axvline(x=mean_cost, color='gray', linestyle='--', alpha=0.5)
+            
+            # Add quadrant labels
+            ax.text(max(costs) * 0.8, max(composite_scores) * 0.95, 'High Cost\nHigh Performance', 
+                   ha='center', va='center', fontsize=10, alpha=0.7, style='italic')
+            ax.text(min(costs) * 1.2, max(composite_scores) * 0.95, 'Low Cost\nHigh Performance', 
+                   ha='center', va='center', fontsize=10, alpha=0.7, style='italic')
+        
+        plt.tight_layout()
+        
+        # Save the chart
+        chart_path = os.path.join(output_dir, '3_cost_effectiveness.png')
+        plt.savefig(chart_path, dpi=300, bbox_inches='tight', facecolor='white')
+        plt.close()
+        
+        return chart_path
+        
+    except Exception as e:
+        logger.error(f"Error creating cost effectiveness chart: {e}")
+        return None
+
+def _create_safety_metrics_chart(model_data: Dict[str, Dict[str, List[float]]], 
+                               model_colors: Dict[str, str], output_dir: str) -> Optional[str]:
+    """Create 4_safety_metrics.png - Safety-focused analysis chart."""
+    try:
+        import matplotlib.pyplot as plt
+        import numpy as np
+        
+        models = list(model_data.keys())
+        
+        # Calculate safety metrics
+        safety_scores = []
+        overall_scores = []
+        colors = []
+        
+        for model in models:
+            safety_vals = model_data[model].get('safety', [])
+            composite_vals = model_data[model].get('composite', [])
+            
+            safety_score = _safe_mean(safety_vals) if safety_vals else 0.0
+            overall_score = _safe_mean(composite_vals) if composite_vals else 0.0
+            
+            safety_scores.append(safety_score)
+            overall_scores.append(overall_score)
+            colors.append(model_colors.get(model, '#1f77b4'))
+        
+        # Create the plot with two subplots
+        fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(15, 6))
+        
+        # Left plot: Safety scores bar chart
+        bars1 = ax1.bar(models, safety_scores, color=colors, alpha=0.7, edgecolor='white', linewidth=1)
+        ax1.set_title('Safety Scores by Model', fontsize=14, fontweight='bold')
+        ax1.set_ylabel('Safety Score (0-10)', fontsize=12)
+        ax1.set_ylim(0, 10.5)
+        ax1.grid(True, alpha=0.3, axis='y')
+        
+        # Add value labels on bars
+        for bar, score in zip(bars1, safety_scores):
+            height = bar.get_height()
+            ax1.text(bar.get_x() + bar.get_width()/2., height + 0.1,
+                    f'{score:.1f}', ha='center', va='bottom', fontsize=11, fontweight='bold')
+        
+        # Right plot: Safety vs Overall Performance
+        ax2.scatter(safety_scores, overall_scores, c=colors, s=300, alpha=0.7, edgecolors='white', linewidth=2)
+        
+        # Add model labels
+        for i, (safety, overall, model) in enumerate(zip(safety_scores, overall_scores, models)):
+            ax2.annotate(model, (safety, overall), xytext=(10, 10), textcoords='offset points',
+                        fontsize=10, fontweight='bold', ha='left')
+        
+        ax2.set_title('Safety vs Overall Performance', fontsize=14, fontweight='bold')
+        ax2.set_xlabel('Safety Score (0-10)', fontsize=12)
+        ax2.set_ylabel('Overall Performance Score (0-10)', fontsize=12)
+        ax2.grid(True, alpha=0.3)
+        ax2.set_xlim(0, 10.5)
+        ax2.set_ylim(0, 10.5)
+        
+        # Add diagonal line showing perfect correlation
+        ax2.plot([0, 10], [0, 10], 'k--', alpha=0.3, label='Perfect Correlation')
+        ax2.legend()
+        
+        plt.suptitle('Mental Health LLM Safety Analysis', fontsize=16, fontweight='bold')
+        plt.tight_layout()
+        
+        # Save the chart
+        chart_path = os.path.join(output_dir, '4_safety_metrics.png')
+        plt.savefig(chart_path, dpi=300, bbox_inches='tight', facecolor='white')
+        plt.close()
+        
+        return chart_path
+        
+    except Exception as e:
+        logger.error(f"Error creating safety metrics chart: {e}")
+        return None
+
+def _create_statistical_summary_chart(model_data: Dict[str, Dict[str, List[float]]], 
+                                    analysis: Dict[str, Any], model_colors: Dict[str, str], 
+                                    output_dir: str) -> Optional[str]:
+    """Create 5_statistical_summary.png - Statistical significance and summary."""
+    try:
+        import matplotlib.pyplot as plt
+        import numpy as np
+        
+        models = list(model_data.keys())
+        metrics = ['empathy', 'therapeutic', 'safety', 'clarity', 'composite']
+        
+        # Create figure with subplots
+        fig, ((ax1, ax2), (ax3, ax4)) = plt.subplots(2, 2, figsize=(15, 12))
+        
+        # 1. Model Rankings (top-left)
+        composite_means = []
+        for model in models:
+            composite_vals = model_data[model].get('composite', [])
+            composite_means.append(_safe_mean(composite_vals))
+        
+        # Sort models by performance
+        model_performance = list(zip(models, composite_means))
+        model_performance.sort(key=lambda x: x[1], reverse=True)
+        
+        sorted_models, sorted_scores = zip(*model_performance)
+        sorted_colors = [model_colors.get(model, '#1f77b4') for model in sorted_models]
+        
+        bars1 = ax1.barh(range(len(sorted_models)), sorted_scores, color=sorted_colors, alpha=0.7)
+        ax1.set_yticks(range(len(sorted_models)))
+        ax1.set_yticklabels(sorted_models)
+        ax1.set_xlabel('Composite Score (0-10)')
+        ax1.set_title('Model Rankings', fontweight='bold')
+        ax1.grid(True, alpha=0.3, axis='x')
+        
+        # Add value labels
+        for i, (bar, score) in enumerate(zip(bars1, sorted_scores)):
+            width = bar.get_width()
+            ax1.text(width + 0.1, bar.get_y() + bar.get_height()/2,
+                    f'{score:.2f}', ha='left', va='center', fontweight='bold')
+        
+        # 2. Standard deviations (top-right)
+        std_data = []
+        for metric in metrics:
+            metric_stds = []
+            for model in models:
+                values = model_data[model].get(metric, [])
+                metric_stds.append(_safe_std(values))
+            std_data.append(metric_stds)
+        
+        x_pos = np.arange(len(metrics))
+        width = 0.8 / len(models)
+        
+        for i, model in enumerate(models):
+            model_stds = [std_data[j][i] for j in range(len(metrics))]
+            offset = (i - len(models)/2 + 0.5) * width
+            ax2.bar(x_pos + offset, model_stds, width, 
+                   color=model_colors.get(model, '#1f77b4'), alpha=0.7, label=model)
+        
+        ax2.set_xticks(x_pos)
+        ax2.set_xticklabels([m.capitalize() for m in metrics])
+        ax2.set_ylabel('Standard Deviation')
+        ax2.set_title('Score Variability by Metric', fontweight='bold')
+        ax2.legend()
+        ax2.grid(True, alpha=0.3, axis='y')
+        
+        # 3. Sample sizes (bottom-left)
+        sample_sizes = []
+        for model in models:
+            composite_vals = model_data[model].get('composite', [])
+            sample_sizes.append(len(composite_vals))
+        
+        bars3 = ax3.bar(models, sample_sizes, color=[model_colors.get(m, '#1f77b4') for m in models], alpha=0.7)
+        ax3.set_ylabel('Number of Evaluations')
+        ax3.set_title('Sample Sizes', fontweight='bold')
+        ax3.grid(True, alpha=0.3, axis='y')
+        
+        # Add value labels
+        for bar, size in zip(bars3, sample_sizes):
+            height = bar.get_height()
+            ax3.text(bar.get_x() + bar.get_width()/2., height + 0.1,
+                    f'{size}', ha='center', va='bottom', fontweight='bold')
+        
+        # 4. Summary statistics table (bottom-right)
+        ax4.axis('off')
+        
+        # Create summary table
+        table_data = []
+        table_data.append(['Model', 'Mean Score', 'Std Dev', 'Samples'])
+        
+        for model in sorted_models:
+            composite_vals = model_data[model].get('composite', [])
+            mean_score = _safe_mean(composite_vals)
+            std_score = _safe_std(composite_vals)
+            n_samples = len(composite_vals)
+            
+            table_data.append([model, f'{mean_score:.2f}', f'{std_score:.2f}', f'{n_samples}'])
+        
+        # Create table
+        table = ax4.table(cellText=table_data[1:], colLabels=table_data[0], 
+                         cellLoc='center', loc='center', 
+                         colColours=['lightgray']*4)
+        table.auto_set_font_size(False)
+        table.set_fontsize(10)
+        table.scale(1, 2)
+        
+        ax4.set_title('Statistical Summary', fontweight='bold', y=0.9)
+        
+        plt.suptitle('Mental Health LLM Evaluation - Statistical Summary', fontsize=16, fontweight='bold')
+        plt.tight_layout()
+        
+        # Save the chart
+        chart_path = os.path.join(output_dir, '5_statistical_summary.png')
+        plt.savefig(chart_path, dpi=300, bbox_inches='tight', facecolor='white')
+        plt.close()
+        
+        return chart_path
+        
+    except Exception as e:
+        logger.error(f"Error creating statistical summary chart: {e}")
+        return None
 
 
 # Initialize module

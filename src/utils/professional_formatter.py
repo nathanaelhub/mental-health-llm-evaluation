@@ -237,7 +237,9 @@ class ProfessionalFormatter:
                 if model not in model_totals:
                     model_totals[model] = 0.0
                     model_counts[model] = 0
-                model_totals[model] += score
+                # Defensive programming: ensure no None values get through
+                safe_score = score if score is not None else 0.0
+                model_totals[model] += safe_score
                 model_counts[model] += 1
         
         overall_rankings = []
