@@ -1,0 +1,431 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mental Health Support Chat - AI-Powered Assistance</title>
+    <meta name="description" content="Professional mental health support with intelligent AI model selection for personalized care">
+    <link rel="icon" type="image/svg+xml" href="/static/favicon.svg">
+    
+    <!-- Preload critical resources -->
+    <link rel="preload" href="/static/css/modern_chat.css" as="style">
+    <link rel="preload" href="/static/js/modern_chat.js" as="script">
+    
+    <!-- Stylesheets -->
+    <link rel="stylesheet" href="/static/css/modern_chat.css">
+    
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" integrity="sha512-Avb2QiuDEEvB4bZJYdft2mNjVShBftLdPG8FJ0V7irTLQ8Uo0qcPxh4Plq7G5tGm0rU+1SPhVotteLpBERwTkw==" crossorigin="anonymous" referrerpolicy="no-referrer">
+    
+    <!-- Meta tags for better sharing -->
+    <meta property="og:title" content="Mental Health Support Chat">
+    <meta property="og:description" content="Professional AI-powered mental health support">
+    <meta property="og:type" content="website">
+    
+    <!-- Theme and accessibility -->
+    <meta name="theme-color" content="#4f46e5">
+    <meta name="color-scheme" content="light dark">
+</head>
+<body class="bg-gray-50 dark:bg-gray-900 font-inter transition-colors duration-300">
+    <!-- Skip to main content for screen readers -->
+    <a href="#main-chat" class="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 z-50 bg-indigo-600 text-white px-4 py-2 rounded-md">
+        Skip to main content
+    </a>
+
+    <!-- Chat Container -->
+    <div id="chat-app" class="h-screen flex flex-col overflow-hidden">
+        
+        <!-- Header -->
+        <header class="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 shadow-sm">
+            <div class="px-4 sm:px-6 lg:px-8">
+                <div class="flex items-center justify-between h-16">
+                    <!-- Logo and Title -->
+                    <div class="flex items-center space-x-4">
+                        <div class="flex-shrink-0">
+                            <div class="w-8 h-8 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-lg flex items-center justify-center">
+                                <i class="fas fa-heart text-white text-sm" aria-hidden="true"></i>
+                            </div>
+                        </div>
+                        <div>
+                            <h1 class="text-lg font-semibold text-gray-900 dark:text-white">
+                                Mental Health Support
+                            </h1>
+                            <p class="text-sm text-gray-500 dark:text-gray-400 hidden sm:block">
+                                AI-powered personalized assistance
+                            </p>
+                        </div>
+                    </div>
+
+                    <!-- Header Actions -->
+                    <div class="flex items-center space-x-3">
+                        <!-- Model Selection Indicator -->
+                        <div id="model-indicator" class="hidden sm:flex items-center space-x-2 bg-gray-100 dark:bg-gray-700 rounded-full px-3 py-1.5">
+                            <div class="w-2 h-2 bg-green-500 rounded-full animate-pulse" aria-hidden="true"></div>
+                            <span id="current-model" class="text-xs font-medium text-gray-700 dark:text-gray-300">
+                                Intelligent Selection
+                            </span>
+                        </div>
+
+                        <!-- Settings Button -->
+                        <button id="settings-btn" 
+                                class="p-2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                                aria-label="Open settings"
+                                type="button">
+                            <i class="fas fa-cog w-5 h-5" aria-hidden="true"></i>
+                        </button>
+
+                        <!-- Theme Toggle -->
+                        <button id="theme-toggle" 
+                                class="p-2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                                aria-label="Toggle theme"
+                                type="button">
+                            <i class="fas fa-sun dark:hidden w-5 h-5" aria-hidden="true"></i>
+                            <i class="fas fa-moon hidden dark:block w-5 h-5" aria-hidden="true"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main Chat Area -->
+        <main id="main-chat" class="flex-1 flex overflow-hidden">
+            
+            <!-- Chat Messages Container -->
+            <div class="flex-1 flex flex-col">
+                
+                <!-- Messages Area -->
+                <div id="messages-container" 
+                     class="flex-1 overflow-y-auto scroll-smooth bg-gray-50 dark:bg-gray-900"
+                     role="log" 
+                     aria-live="polite" 
+                     aria-label="Conversation messages">
+                    
+                    <div class="max-w-4xl mx-auto px-4 py-6 space-y-6">
+                        
+                        <!-- Welcome Message -->
+                        <div class="flex justify-center mb-8">
+                            <div class="max-w-2xl text-center">
+                                <div class="w-16 h-16 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-full flex items-center justify-center mx-auto mb-4">
+                                    <i class="fas fa-heart text-white text-xl" aria-hidden="true"></i>
+                                </div>
+                                <h2 class="text-2xl font-semibold text-gray-900 dark:text-white mb-3">
+                                    Welcome to Mental Health Support
+                                </h2>
+                                <p class="text-gray-600 dark:text-gray-400 mb-6">
+                                    I'm here to provide compassionate support and evidence-based guidance. 
+                                    Our intelligent system automatically selects the best AI model for your specific needs.
+                                </p>
+                                <div class="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg p-4">
+                                    <div class="flex items-start space-x-3">
+                                        <i class="fas fa-exclamation-triangle text-amber-600 dark:text-amber-400 mt-0.5" aria-hidden="true"></i>
+                                        <div class="text-sm text-amber-800 dark:text-amber-200 text-left">
+                                            <p class="font-medium mb-1">Important Notice</p>
+                                            <p>This is a supportive tool, not a replacement for professional mental health services. 
+                                            If you're experiencing a crisis, please contact emergency services or a crisis helpline immediately.</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Dynamic Messages will be inserted here -->
+                        <div id="chat-messages" class="space-y-6">
+                            <!-- Messages appear here dynamically -->
+                        </div>
+
+                        <!-- Model Selection Visualization (Advanced Mode) -->
+                        <div id="model-selection-panel" class="hidden bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6 shadow-sm">
+                            <div class="flex items-center justify-between mb-4">
+                                <h3 class="text-lg font-semibold text-gray-900 dark:text-white flex items-center">
+                                    <i class="fas fa-brain text-indigo-500 mr-2" aria-hidden="true"></i>
+                                    Model Selection Analysis
+                                </h3>
+                                <button id="close-selection-panel" 
+                                        class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+                                        aria-label="Close model selection panel">
+                                    <i class="fas fa-times" aria-hidden="true"></i>
+                                </button>
+                            </div>
+                            
+                            <div id="model-comparison" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                                <!-- Model comparison cards will be populated here -->
+                            </div>
+                            
+                            <div class="mt-4 p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
+                                <p id="selection-reasoning" class="text-sm text-gray-600 dark:text-gray-400">
+                                    <!-- Selection reasoning will appear here -->
+                                </p>
+                            </div>
+                        </div>
+
+                        <!-- Typing Indicators -->
+                        <div id="typing-indicator" class="hidden">
+                            <div class="flex items-start space-x-3">
+                                <div class="w-8 h-8 bg-indigo-100 dark:bg-indigo-900 rounded-full flex items-center justify-center flex-shrink-0">
+                                    <i class="fas fa-robot text-indigo-600 dark:text-indigo-400 text-sm" aria-hidden="true"></i>
+                                </div>
+                                <div class="bg-white dark:bg-gray-800 rounded-2xl px-4 py-3 shadow-sm border border-gray-200 dark:border-gray-700">
+                                    <div class="flex items-center space-x-2">
+                                        <div class="typing-dots">
+                                            <div class="typing-dot"></div>
+                                            <div class="typing-dot"></div>
+                                            <div class="typing-dot"></div>
+                                        </div>
+                                        <span id="typing-text" class="text-sm text-gray-500 dark:text-gray-400 ml-2">
+                                            AI is thinking...
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+
+                <!-- Quick Actions Bar -->
+                <div id="quick-actions" class="hidden bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 px-4 py-3">
+                    <div class="max-w-4xl mx-auto">
+                        <div class="flex items-center space-x-2 overflow-x-auto">
+                            <span class="text-sm text-gray-500 dark:text-gray-400 whitespace-nowrap">Quick responses:</span>
+                            <button class="quick-action-btn" data-message="I'm feeling anxious">
+                                I'm feeling anxious
+                            </button>
+                            <button class="quick-action-btn" data-message="I need coping strategies">
+                                I need coping strategies
+                            </button>
+                            <button class="quick-action-btn" data-message="Tell me about mindfulness">
+                                Tell me about mindfulness
+                            </button>
+                            <button class="quick-action-btn" data-message="I'm having trouble sleeping">
+                                I'm having trouble sleeping
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Input Area -->
+                <div class="bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 p-4">
+                    <div class="max-w-4xl mx-auto">
+                        <form id="message-form" class="flex items-end space-x-3">
+                            
+                            <!-- Message Input -->
+                            <div class="flex-1 relative">
+                                <label for="message-input" class="sr-only">Your message</label>
+                                <textarea 
+                                    id="message-input"
+                                    name="message"
+                                    rows="1"
+                                    class="w-full resize-none rounded-xl border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 px-4 py-3 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:border-indigo-500 dark:focus:border-indigo-400 focus:outline-none focus:ring-1 focus:ring-indigo-500 dark:focus:ring-indigo-400 transition-colors"
+                                    placeholder="Share what's on your mind..."
+                                    maxlength="2000"
+                                    aria-describedby="input-help"></textarea>
+                                
+                                <!-- Character Count -->
+                                <div class="absolute bottom-2 right-3 text-xs text-gray-400">
+                                    <span id="char-count">0</span>/2000
+                                </div>
+                            </div>
+
+                            <!-- Send Button -->
+                            <button 
+                                id="send-button"
+                                type="submit"
+                                class="bg-indigo-600 hover:bg-indigo-700 dark:bg-indigo-500 dark:hover:bg-indigo-600 text-white rounded-xl px-6 py-3 font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800 disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2"
+                                disabled>
+                                <span id="send-text">Send</span>
+                                <i id="send-icon" class="fas fa-paper-plane" aria-hidden="true"></i>
+                            </button>
+                        </form>
+
+                        <!-- Input Help Text -->
+                        <div id="input-help" class="mt-2 text-xs text-gray-500 dark:text-gray-400 flex items-center justify-between">
+                            <span>Press Shift+Enter for new line, Enter to send</span>
+                            <div class="flex items-center space-x-4">
+                                <label class="flex items-center space-x-2 cursor-pointer">
+                                    <input type="checkbox" id="advanced-mode" class="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500">
+                                    <span>Advanced mode</span>
+                                </label>
+                                <button id="export-btn" type="button" class="text-indigo-600 hover:text-indigo-700 dark:text-indigo-400 dark:hover:text-indigo-300">
+                                    Export conversation
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Settings Modal -->
+    <div id="settings-modal" class="hidden fixed inset-0 z-50 overflow-y-auto" role="dialog" aria-labelledby="settings-title" aria-modal="true">
+        <div class="flex min-h-screen items-center justify-center p-4">
+            <!-- Backdrop -->
+            <div class="fixed inset-0 bg-gray-500 bg-opacity-75 dark:bg-gray-900 dark:bg-opacity-75 transition-opacity" aria-hidden="true"></div>
+            
+            <!-- Modal Panel -->
+            <div class="relative bg-white dark:bg-gray-800 rounded-xl shadow-xl max-w-md w-full max-h-[80vh] overflow-y-auto">
+                <!-- Modal Header -->
+                <div class="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
+                    <div class="flex items-center justify-between">
+                        <h2 id="settings-title" class="text-lg font-semibold text-gray-900 dark:text-white">
+                            Settings
+                        </h2>
+                        <button id="close-settings" 
+                                type="button"
+                                class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 focus:outline-none focus:ring-2 focus:ring-indigo-500 rounded-md p-1"
+                                aria-label="Close settings">
+                            <i class="fas fa-times" aria-hidden="true"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Modal Content -->
+                <div class="px-6 py-4 space-y-6">
+                    
+                    <!-- Accessibility Settings -->
+                    <div>
+                        <h3 class="text-sm font-medium text-gray-900 dark:text-white mb-3">Accessibility</h3>
+                        <div class="space-y-3">
+                            <label class="flex items-center justify-between cursor-pointer">
+                                <span class="text-sm text-gray-700 dark:text-gray-300">High contrast mode</span>
+                                <input type="checkbox" id="high-contrast" class="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500">
+                            </label>
+                            <label class="flex items-center justify-between cursor-pointer">
+                                <span class="text-sm text-gray-700 dark:text-gray-300">Reduce animations</span>
+                                <input type="checkbox" id="reduce-motion" class="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500">
+                            </label>
+                            <div>
+                                <label for="font-size" class="block text-sm text-gray-700 dark:text-gray-300 mb-2">Font size</label>
+                                <select id="font-size" class="w-full rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 px-3 py-2 text-sm text-gray-900 dark:text-white focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500">
+                                    <option value="small">Small</option>
+                                    <option value="medium" selected>Medium</option>
+                                    <option value="large">Large</option>
+                                    <option value="extra-large">Extra Large</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Chat Settings -->
+                    <div>
+                        <h3 class="text-sm font-medium text-gray-900 dark:text-white mb-3">Chat Preferences</h3>
+                        <div class="space-y-3">
+                            <label class="flex items-center justify-between cursor-pointer">
+                                <span class="text-sm text-gray-700 dark:text-gray-300">Show model selection details</span>
+                                <input type="checkbox" id="show-model-details" class="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500">
+                            </label>
+                            <label class="flex items-center justify-between cursor-pointer">
+                                <span class="text-sm text-gray-700 dark:text-gray-300">Enable quick actions</span>
+                                <input type="checkbox" id="enable-quick-actions" checked class="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500">
+                            </label>
+                            <label class="flex items-center justify-between cursor-pointer">
+                                <span class="text-sm text-gray-700 dark:text-gray-300">Real-time streaming</span>
+                                <input type="checkbox" id="enable-streaming" checked class="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500">
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Privacy Settings -->
+                    <div>
+                        <h3 class="text-sm font-medium text-gray-900 dark:text-white mb-3">Privacy</h3>
+                        <div class="space-y-3">
+                            <button type="button" id="clear-conversation" 
+                                    class="w-full text-left px-3 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-md transition-colors">
+                                Clear conversation history
+                            </button>
+                            <button type="button" id="download-data" 
+                                    class="w-full text-left px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-md transition-colors">
+                                Download my data
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- System Information -->
+                    <div>
+                        <h3 class="text-sm font-medium text-gray-900 dark:text-white mb-3">System Information</h3>
+                        <div class="space-y-2 text-xs text-gray-500 dark:text-gray-400">
+                            <div class="flex justify-between">
+                                <span>Session ID:</span>
+                                <span id="session-display" class="font-mono">Not connected</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span>Models available:</span>
+                                <span id="models-count">Loading...</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span>Connection status:</span>
+                                <span id="connection-status" class="flex items-center">
+                                    <div class="w-2 h-2 bg-green-500 rounded-full mr-1"></div>
+                                    Connected
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Modal Footer -->
+                <div class="px-6 py-4 border-t border-gray-200 dark:border-gray-700">
+                    <div class="flex justify-end space-x-3">
+                        <button type="button" id="reset-settings" 
+                                class="px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white transition-colors">
+                            Reset to defaults
+                        </button>
+                        <button type="button" id="save-settings" 
+                                class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 dark:bg-indigo-500 dark:hover:bg-indigo-600 text-white text-sm font-medium rounded-md transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800">
+                            Save settings
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notifications Container -->
+    <div id="toast-container" class="fixed top-4 right-4 z-50 space-y-2" aria-live="polite" aria-atomic="true">
+        <!-- Toast notifications will appear here -->
+    </div>
+
+    <!-- Loading Overlay -->
+    <div id="loading-overlay" class="hidden fixed inset-0 bg-white dark:bg-gray-900 bg-opacity-90 dark:bg-opacity-90 z-40 flex items-center justify-center">
+        <div class="text-center">
+            <div class="w-12 h-12 border-4 border-indigo-200 dark:border-indigo-800 border-t-indigo-600 dark:border-t-indigo-400 rounded-full animate-spin mb-4"></div>
+            <p class="text-gray-600 dark:text-gray-400">Initializing chat system...</p>
+        </div>
+    </div>
+
+    <!-- Configuration Script -->
+    <script>
+        // Configuration passed from backend
+        window.chatConfig = {
+            enableStreaming: {{ config.enable_streaming | default(true) | tojson }},
+            enableCaching: {{ config.enable_caching | default(true) | tojson }},
+            availableModels: {{ config.available_models | default(['openai', 'claude']) | tojson }},
+            apiEndpoint: '/api/chat',
+            wsEndpoint: '/api/chat/stream',
+            maxMessageLength: 2000,
+            features: {
+                modelSelection: true,
+                quickActions: true,
+                exportConversation: true,
+                darkMode: true,
+                accessibility: true
+            }
+        };
+
+        // Theme detection and application
+        if (localStorage.theme === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+            document.documentElement.classList.add('dark');
+        } else {
+            document.documentElement.classList.remove('dark');
+        }
+    </script>
+    
+    <!-- Main Application Script -->
+    <script src="/static/js/modern_chat.js"></script>
+</body>
+</html>

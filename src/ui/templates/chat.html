@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mental Health Support Chat</title>
+    <link rel="stylesheet" href="/static/css/chat.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+</head>
+<body>
+    <div class="chat-container">
+        <!-- Header -->
+        <div class="chat-header">
+            <div class="header-content">
+                <div class="title-section">
+                    <h1><i class="fas fa-heart"></i> Mental Health Support</h1>
+                    <p>Intelligent LLM-powered mental health assistance</p>
+                </div>
+                <div class="status-section">
+                    <div class="model-info">
+                        <span class="model-label">Currently chatting with:</span>
+                        <span id="current-model" class="model-name">Selecting best model...</span>
+                        <div class="confidence-display" id="confidence-display" style="display: none;">
+                            <span class="confidence-label">Confidence:</span>
+                            <span id="confidence-score" class="confidence-value">0%</span>
+                        </div>
+                        <div class="model-controls" style="margin-top: 8px;">
+                            <button class="new-conversation-btn" onclick="event.preventDefault(); startNewConversation()" title="Start new conversation">
+                                <i class="fas fa-plus"></i> New Chat
+                            </button>
+                            <button class="model-action-btn" onclick="event.preventDefault(); showModelSwitchModal()" title="Switch model">
+                                <i class="fas fa-exchange-alt"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="session-info">
+                        <span class="session-label">Session:</span>
+                        <span id="session-id" class="session-id">New</span>
+                        <div class="turn-counter">
+                            <span class="turn-label">Turn:</span>
+                            <span id="turn-count" class="turn-value">0</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Chat Messages History -->
+        <div class="chat-messages" id="chat-messages">
+            <div class="welcome-message" id="welcome-message">
+                <div class="message system-message">
+                    <div class="message-content">
+                        <div class="system-avatar">
+                            <i class="fas fa-heart"></i>
+                        </div>
+                        <div class="message-text">
+                            <p><strong>Welcome to Mental Health Support Chat</strong></p>
+                            <p>I'm here to provide compassionate support and evidence-based guidance. Our intelligent system will automatically select the best AI model for your specific needs.</p>
+                            <p><strong>How it works:</strong></p>
+                            <ul>
+                                <li>Your first message will be analyzed to find the most suitable AI model</li>
+                                <li>All 4 models (OpenAI, Claude, DeepSeek, Gemma) are evaluated with confidence scores</li>
+                                <li>All subsequent messages will continue with that selected model</li>
+                                <li>You can start a new conversation anytime to re-select models</li>
+                            </ul>
+                            <p><small><span style="color: #06b6d4;">📖 See /docs/UI_SCORING_EXPLANATION.md to learn how model selection works</span></small></p>
+                            <p><strong>Important:</strong> This is a supportive tool, not a replacement for professional mental health services. If you're experiencing a crisis, please contact emergency services or a crisis helpline.</p>
+                            <p>💬 <strong>What's on your mind today?</strong></p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Chat history will be populated here -->
+            <div class="conversation-history" id="conversation-history">
+                <!-- Messages will be added dynamically -->
+            </div>
+        </div>
+
+        <!-- Selection Indicator -->
+        <div class="selection-indicator" id="selection-indicator" style="display: none;">
+            <div class="selection-content">
+                <div class="spinner"></div>
+                <span class="selection-text">Evaluating models to find the best fit for your needs...</span>
+            </div>
+        </div>
+
+        <!-- Typing Indicator -->
+        <div class="typing-indicator" id="typing-indicator" style="display: none;">
+            <div class="typing-content">
+                <div class="typing-dots">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                </div>
+                <span class="typing-text">Assistant is typing...</span>
+            </div>
+        </div>
+
+        <!-- Chat Input -->
+        <div class="chat-input-container">
+            <div class="chat-input-wrapper">
+                <textarea 
+                    id="message-input" 
+                    placeholder="Type your message here... (Press Enter to send, Shift+Enter for new line)"
+                    rows="1"></textarea>
+                <button id="send-button" class="send-button">
+                    <i class="fas fa-paper-plane"></i>
+                </button>
+            </div>
+            <div class="input-options">
+                <label class="option-checkbox">
+                    <input type="checkbox" id="use-cache" checked>
+                    <span>Use cached responses</span>
+                </label>
+                <label class="option-checkbox">
+                    <input type="checkbox" id="use-streaming" checked>
+                    <span>Real-time streaming</span>
+                </label>
+            </div>
+        </div>
+    </div>
+
+    <!-- Chat History Modal -->
+    <div class="modal" id="chat-history-modal" style="display: none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2><i class="fas fa-history"></i> Chat History</h2>
+                <button class="modal-close" onclick="event.preventDefault(); closeModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="chat-history-info" id="chat-history-info">
+                    <div class="history-stats">
+                        <div class="stat-item">
+                            <span class="stat-label">Session ID:</span>
+                            <span class="stat-value" id="history-session-id">None</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-label">Selected Model:</span>
+                            <span class="stat-value" id="history-model">None</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-label">Total Turns:</span>
+                            <span class="stat-value" id="history-turns">0</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-label">Conversation Mode:</span>
+                            <span class="stat-value" id="history-mode">None</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="chat-history-content" id="chat-history-content">
+                    <!-- Chat history will be loaded here -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- System Status Modal -->
+    <div class="modal" id="system-status-modal" style="display: none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2><i class="fas fa-server"></i> System Status</h2>
+                <button class="modal-close" onclick="event.preventDefault(); closeModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div id="system-status-content" class="status-content">
+                    <div class="loading-spinner">
+                        <div class="spinner"></div>
+                        <span>Loading system status...</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Model Status Modal -->
+    <div class="modal" id="model-status-modal" style="display: none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2><i class="fas fa-robot"></i> Model Status</h2>
+                <button class="modal-close" onclick="event.preventDefault(); closeModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div id="model-status-content" class="status-content">
+                    <div class="loading-spinner">
+                        <div class="spinner"></div>
+                        <span>Loading model status...</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Model Switch Modal -->
+    <div class="modal" id="model-switch-modal" style="display: none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2><i class="fas fa-exchange-alt"></i> Switch Model</h2>
+                <button class="modal-close" onclick="event.preventDefault(); closeModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="model-switch-info">
+                    <p>Current Model: <strong id="current-model-display">Unknown</strong></p>
+                    <p>Switch to a different AI model for this conversation:</p>
+                </div>
+                <div class="model-switch-options">
+                    <div class="model-option" onclick="event.preventDefault(); switchToModel('openai')">
+                        <div class="model-option-header">
+                            <h4>OpenAI GPT-4</h4>
+                            <span class="model-badge">General Purpose</span>
+                        </div>
+                        <p>Best for: General support, crisis intervention, anxiety, depression</p>
+                    </div>
+                    <div class="model-option" onclick="event.preventDefault(); switchToModel('claude')">
+                        <div class="model-option-header">
+                            <h4>Claude-3</h4>
+                            <span class="model-badge">Empathetic</span>
+                        </div>
+                        <p>Best for: Empathy, therapeutic conversations, crisis support, trauma</p>
+                    </div>
+                    <div class="model-option" onclick="event.preventDefault(); switchToModel('deepseek')">
+                        <div class="model-option-header">
+                            <h4>DeepSeek R1</h4>
+                            <span class="model-badge">Analytical</span>
+                        </div>
+                        <p>Best for: Information seeking, analysis, problem-solving</p>
+                    </div>
+                    <div class="model-option" onclick="event.preventDefault(); switchToModel('gemma')">
+                        <div class="model-option-header">
+                            <h4>Gemma 3-12B</h4>
+                            <span class="model-badge">Supportive</span>
+                        </div>
+                        <p>Best for: General support, relationships, wellness guidance</p>
+                    </div>
+                </div>
+                <div class="modal-actions">
+                    <button onclick="event.preventDefault(); forceReselection(); closeModal();" class="reselection-btn">
+                        <i class="fas fa-sync"></i> Re-evaluate & Auto-Select
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Settings Modal -->
+    <div class="modal" id="settings-modal" style="display: none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Settings & System Status</h2>
+                <button class="modal-close" onclick="event.preventDefault(); closeModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="settings-section">
+                    <h3>Available Models</h3>
+                    <div id="model-health" class="model-health-grid">
+                        <!-- Model health status will be loaded here -->
+                    </div>
+                </div>
+                <div class="settings-section">
+                    <h3>Cache Statistics</h3>
+                    <div id="cache-stats" class="stats-grid">
+                        <!-- Cache stats will be loaded here -->
+                    </div>
+                </div>
+                <div class="settings-section">
+                    <h3>Session Analytics</h3>
+                    <div id="session-analytics" class="stats-grid">
+                        <!-- Session analytics will be loaded here -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Action Buttons -->
+    <div class="action-buttons">
+        <button class="action-button" onclick="event.preventDefault(); showSystemStatus()" title="System Status">
+            <i class="fas fa-server"></i>
+        </button>
+        <button class="action-button" onclick="event.preventDefault(); showModelStatus()" title="Model Status">
+            <i class="fas fa-robot"></i>
+        </button>
+        <button class="action-button" onclick="event.preventDefault(); showChatHistory()" title="Chat History">
+            <i class="fas fa-history"></i>
+        </button>
+        <button class="action-button" onclick="event.preventDefault(); showSettings()" title="Settings & Status">
+            <i class="fas fa-cog"></i>
+        </button>
+        <button class="action-button" onclick="event.preventDefault(); startNewConversation()" title="New Conversation">
+            <i class="fas fa-plus"></i>
+        </button>
+    </div>
+
+    <!-- Toast Notifications -->
+    <div class="toast-container" id="toast-container"></div>
+
+    <!-- Configuration -->
+    <script>
+        window.chatConfig = {
+            enableStreaming: {{ config.enable_streaming | tojson }},
+            enableCaching: {{ config.enable_caching | tojson }},
+            availableModels: {{ config.available_models | tojson }}
+        };
+    </script>
+    
+    <script src="/static/js/chat.js"></script>
+</body>
+</html>

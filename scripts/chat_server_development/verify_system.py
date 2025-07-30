@@ -87,12 +87,12 @@ class SystemVerifier:
         except Exception as e:
             self.log_error('imports', f"Failed to import MentalHealthEvaluator: {e}")
         
-        # Test ModelComparator import
+        # Test SimpleModelComparator import
         try:
-            from scripts.compare_models import ModelComparator
-            self.log_success('imports', "ModelComparator imported successfully")
+            from scripts.compare_models import SimpleModelComparator
+            self.log_success('imports', "SimpleModelComparator imported successfully")
         except Exception as e:
-            self.log_error('imports', f"Failed to import ModelComparator: {e}")
+            self.log_error('imports', f"Failed to import SimpleModelComparator: {e}")
         
         # Test statistical analysis import
         try:
@@ -354,14 +354,14 @@ class SystemVerifier:
             self.log_error('results', f"Evaluation system test failed: {e}")
         
         try:
-            from scripts.compare_models import ModelComparator
+            from scripts.compare_models import SimpleModelComparator
             
-            # Test ModelComparator initialization
-            comparator = ModelComparator(selected_models=['openai', 'deepseek'], quiet=True)
-            self.log_success('results', "ModelComparator initialized successfully")
+            # Test SimpleModelComparator initialization
+            comparator = SimpleModelComparator()
+            self.log_success('results', "SimpleModelComparator initialized successfully")
             
         except Exception as e:
-            self.log_error('results', f"ModelComparator test failed: {e}")
+            self.log_error('results', f"SimpleModelComparator test failed: {e}")
     
     def run_verification(self):
         """Run all verification tests."""
