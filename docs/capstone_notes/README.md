@@ -1,9 +1,18 @@
 # Capstone Notes
 
-This directory contains private research notes and documentation for the capstone paper.
+This directory contains comprehensive documentation for the Mental Health LLM Evaluation capstone project.
 
-## Contents
+## 📚 Documentation Files
 
+### Core Technical Documentation
+- **SESSION_PERSISTENCE_IMPLEMENTATION.md** - SQLite-based session storage with 92% performance improvement
+- **UI_UX_IMPROVEMENTS.md** - Vertical layout design rationale and therapeutic interface
+- **PERFORMANCE_OPTIMIZATION.md** - Detailed analysis of response time improvements
+- **PRODUCTION_DEPLOYMENT.md** - Infrastructure, security, and scalability planning
+- **COST_OPTIMIZATION_ANALYSIS.md** - 30-40% cost reduction strategies
+- **CRISIS_DETECTION_REFINEMENT.md** - Multi-layer crisis detection framework
+
+### Research Documentation (Legacy)
 - **CAPSTONE_RESULTS.md** - Research findings and analysis
 - **IMPLEMENTATION_HIGHLIGHTS.md** - Technical details and code snippets  
 - **FUTURE_WORK.md** - Recommendations for continued research
@@ -15,13 +24,19 @@ This directory contains private research notes and documentation for the capston
 
 ```
 docs/capstone_notes/
-├── README.md                    # This file
-├── CAPSTONE_RESULTS.md         # Main research findings
-├── IMPLEMENTATION_HIGHLIGHTS.md # Technical implementation details
-├── FUTURE_WORK.md              # Research directions and recommendations
-├── BIAS_ANALYSIS.md            # Bias detection and analysis
-├── BIAS_FIX_SUMMARY.md         # Bias mitigation summary
-└── PRESENTATION_HIGHLIGHTS.md  # Presentation materials
+├── README.md                              # This file
+├── SESSION_PERSISTENCE_IMPLEMENTATION.md  # Session management solution
+├── UI_UX_IMPROVEMENTS.md                  # Interface design documentation
+├── PERFORMANCE_OPTIMIZATION.md            # Performance analysis
+├── PRODUCTION_DEPLOYMENT.md               # Deployment guide
+├── COST_OPTIMIZATION_ANALYSIS.md          # Cost reduction strategies
+├── CRISIS_DETECTION_REFINEMENT.md         # Crisis detection improvements
+├── CAPSTONE_RESULTS.md                    # Main research findings
+├── IMPLEMENTATION_HIGHLIGHTS.md           # Technical implementation details
+├── FUTURE_WORK.md                         # Research directions
+├── BIAS_ANALYSIS.md                       # Bias detection and analysis
+├── BIAS_FIX_SUMMARY.md                    # Bias mitigation summary
+└── PRESENTATION_HIGHLIGHTS.md             # Presentation materials
 ```
 
 ## Note

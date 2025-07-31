@@ -246,3 +246,8 @@ backup_*/
 
 # Claude Code configuration
 CLAUDE.md
+
+# Capstone notes (private research notes)
+docs/capstone_notes/*
+!docs/capstone_notes/README.md
+!docs/capstone_notes/.gitignore

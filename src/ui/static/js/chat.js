@@ -12,6 +12,7 @@ class MentalHealthChat {
         this.websocket = null;
         this.isStreaming = false;
         this.messageHistory = [];
+        this.isSending = false;  // Prevent double-sending
         
         // Configuration from server
         this.config = window.chatConfig || {
@@ -41,6 +42,22 @@ class MentalHealthChat {
         // Indicators
         this.selectionIndicator = document.getElementById('selection-indicator');
         this.typingIndicator = document.getElementById('typing-indicator');
+        
+        // Validate critical elements
+        const requiredElements = {
+            'chat-messages': this.chatMessages,
+            'message-input': this.messageInput,
+            'send-button': this.sendButton,
+            'current-model': this.currentModelElement,
+            'session-id': this.sessionIdElement,
+            'model-scores': this.modelScoresElement
+        };
+        
+        for (const [id, element] of Object.entries(requiredElements)) {
+            if (!element) {
+                console.error(`❌ Required element missing: ${id}`);
+            }
+        }
         
         // Options
         this.useCacheCheckbox = document.getElementById('use-cache');
@@ -89,6 +106,13 @@ class MentalHealthChat {
         const message = this.messageInput.value.trim();
         if (!message || this.isStreaming) return;
         
+        // Prevent double-sending
+        if (this.isSending) {
+            console.log('⚠️ Already sending a message, ignoring duplicate request');
+            return;
+        }
+        this.isSending = true;
+        
         // Add user message to chat
         this.addMessage(message, 'user');
         this.messageInput.value = '';
@@ -98,17 +122,23 @@ class MentalHealthChat {
         this.setInputState(false);
         
         try {
+            console.log('🔍 Sending message - Streaming checkbox:', this.useStreamingCheckbox.checked, 'Config streaming:', this.config.enableStreaming);
             if (this.useStreamingCheckbox.checked && this.config.enableStreaming) {
+                console.log('📡 Using streaming mode');
                 await this.sendStreamingMessage(message);
             } else {
+                console.log('📬 Using regular mode');
                 await this.sendRegularMessage(message);
             }
+            console.log('✅ Message sent successfully');
         } catch (error) {
-            console.error('Error sending message:', error);
+            console.error('❌ Error sending message:', error);
+            console.error('Error stack:', error.stack);
             this.showToast('Failed to send message. Please try again.', 'error');
             this.addMessage('Sorry, I encountered an error. Please try again.', 'assistant', { error: true });
         } finally {
             this.setInputState(true);
+            this.isSending = false;
         }
     }
     
@@ -155,7 +185,9 @@ class MentalHealthChat {
             model: data.selected_model,
             responseTime: data.response_time_ms || 100,
             turnCount: data.turn_count,
-            conversationMode: data.conversation_mode
+            conversationMode: data.conversation_mode,
+            confidenceScore: data.confidence_score,
+            modelScores: data.model_scores
         });
         
         // Show model scores if this is a new selection
@@ -175,87 +207,12 @@ class MentalHealthChat {
     }
     
     async sendStreamingMessage(message) {
-        return new Promise((resolve, reject) => {
-            // Show selection indicator for new sessions
-            if (!this.currentSessionId) {
-                this.showSelectionIndicator();
-            }
-            
-            // Create WebSocket connection
-            const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-            const wsUrl = `${wsProtocol}//${window.location.host}/api/chat/stream`;
-            
-            this.websocket = new WebSocket(wsUrl);
-            this.isStreaming = true;
-            
-            let assistantMessageElement = null;
-            let fullResponse = '';
-            
-            this.websocket.onopen = () => {
-                // Send message
-                this.websocket.send(JSON.stringify({
-                    message: message,
-                    session_id: this.currentSessionId,
-                    use_cache: this.useCacheCheckbox.checked
-                }));
-            };
-            
-            this.websocket.onmessage = (event) => {
-                const data = JSON.parse(event.data);
-                
-                switch (data.type) {
-                    case 'start':
-                        this.hideSelectionIndicator();
-                        this.showTypingIndicator();
-                        
-                        if (data.is_new_session) {
-                            // We'll get model info with the first chunk
-                        }
-                        break;
-                        
-                    case 'chunk':
-                        this.hideTypingIndicator();
-                        
-                        if (!assistantMessageElement) {
-                            assistantMessageElement = this.addMessage('', 'assistant', { streaming: true });
-                        }
-                        
-                        fullResponse += data.content;
-                        this.updateStreamingMessage(assistantMessageElement, fullResponse);
-                        break;
-                        
-                    case 'complete':
-                        this.isStreaming = false;
-                        this.hideTypingIndicator();
-                        
-                        if (assistantMessageElement) {
-                            this.finalizeStreamingMessage(assistantMessageElement);
-                        }
-                        
-                        resolve();
-                        break;
-                        
-                    case 'error':
-                        this.isStreaming = false;
-                        this.hideSelectionIndicator();
-                        this.hideTypingIndicator();
-                        reject(new Error(data.message));
-                        break;
-                }
-            };
-            
-            this.websocket.onerror = (error) => {
-                this.isStreaming = false;
-                this.hideSelectionIndicator();
-                this.hideTypingIndicator();
-                reject(error);
-            };
-            
-            this.websocket.onclose = () => {
-                this.isStreaming = false;
-                this.websocket = null;
-            };
-        });
+        // Streaming is not implemented in the mock server
+        console.warn('⚠️ Streaming mode not available in mock server, falling back to regular mode');
+        this.showToast('Streaming not available, using regular mode', 'warning');
+        
+        // Fall back to regular message sending
+        return this.sendRegularMessage(message);
     }
     
     addMessage(content, sender, metadata = {}) {
@@ -315,22 +272,31 @@ class MentalHealthChat {
             const timestamp = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
             metaHTML += `<span class="message-time">${timestamp}</span>`;
             
+            // Create vertical stack for model info
             if (metadata.model) {
-                metaHTML += `<span class="model-badge">${metadata.model.toUpperCase()}</span>`;
-            }
-            
-            if (metadata.conversationMode === 'initial') {
-                metaHTML += `<span class="model-badge">🔍 Selected</span>`;
-            } else if (metadata.conversationMode === 'continued') {
-                metaHTML += `<span class="model-badge">💬 Turn ${metadata.turnCount || ''}</span>`;
-            }
-            
-            if (metadata.cached) {
-                metaHTML += `<span class="model-badge">📚 Cached</span>`;
-            }
-            
-            if (metadata.error) {
-                metaHTML += `<span class="model-badge">⚠️ Error</span>`;
+                metaHTML += `
+                    <div class="model-selection-stack">
+                        <div class="model-badge">${metadata.model.toUpperCase()}</div>`;
+                
+                if (metadata.confidenceScore !== undefined) {
+                    metaHTML += `<div class="confidence-score">${(metadata.confidenceScore * 100).toFixed(1)}% confidence</div>`;
+                }
+                
+                if (metadata.conversationMode === 'selection' || metadata.conversationMode === 'initial') {
+                    metaHTML += `<div class="selection-status">🔍 Selected</div>`;
+                } else if (metadata.conversationMode === 'continuation' || metadata.conversationMode === 'continued') {
+                    metaHTML += `<div class="selection-status">💬 Turn ${metadata.turnCount || ''}</div>`;
+                }
+                
+                if (metadata.cached) {
+                    metaHTML += `<div class="selection-status">📚 Cached</div>`;
+                }
+                
+                if (metadata.error) {
+                    metaHTML += `<div class="selection-status">⚠️ Error</div>`;
+                }
+                
+                metaHTML += `</div>`;
             }
             
             messageMeta.innerHTML = metaHTML;
@@ -423,12 +389,16 @@ class MentalHealthChat {
         this.turnCount = turnCount;
         
         // Update session display
-        this.sessionIdElement.textContent = sessionId.substring(0, 8);
+        if (this.sessionIdElement) {
+            this.sessionIdElement.textContent = sessionId.substring(0, 8);
+        }
         
         // Update model display
         if (conversationMode === 'initial') {
-            this.currentModelElement.textContent = `${modelName.toUpperCase()} (Selected)`;
-            this.currentModelElement.classList.add('model-selecting');
+            if (this.currentModelElement) {
+                this.currentModelElement.textContent = `${modelName.toUpperCase()} (Selected)`;
+                this.currentModelElement.classList.add('model-selecting');
+            }
             
             // Show confidence score
             const confidenceDisplay = document.getElementById('confidence-display');
@@ -440,7 +410,9 @@ class MentalHealthChat {
             
             // Remove selecting state after animation
             setTimeout(() => {
-                this.currentModelElement.classList.remove('model-selecting');
+                if (this.currentModelElement) {
+                    this.currentModelElement.classList.remove('model-selecting');
+                }
             }, 2000);
             
             // Create detailed toast message
@@ -448,7 +420,9 @@ class MentalHealthChat {
             const promptTypeDisplay = data.prompt_type ? data.prompt_type.replace('_', ' ') : 'general';
             this.showToast(`🔍 Selected ${modelName.toUpperCase()} (${confidencePercent}% confidence) for ${promptTypeDisplay} prompt`, 'success');
         } else {
-            this.currentModelElement.textContent = modelName.toUpperCase();
+            if (this.currentModelElement) {
+                this.currentModelElement.textContent = modelName.toUpperCase();
+            }
         }
         
         // Update turn counter
@@ -488,8 +462,10 @@ class MentalHealthChat {
             </div>`;
         }
         
-        this.modelScoresElement.innerHTML = scoresHTML;
-        this.modelScoresElement.style.display = 'block';
+        if (this.modelScoresElement) {
+            this.modelScoresElement.innerHTML = scoresHTML;
+            this.modelScoresElement.style.display = 'block';
+        }
     }
     
     showSelectionIndicator() {
@@ -922,9 +898,15 @@ class MentalHealthChat {
             this.selectedModel = null;
             this.conversationMode = 'initial';
             this.turnCount = 0;
-            this.sessionIdElement.textContent = 'New';
-            this.currentModelElement.textContent = 'Selecting...';
-            this.modelScoresElement.style.display = 'none';
+            if (this.sessionIdElement) {
+                this.sessionIdElement.textContent = 'New';
+            }
+            if (this.currentModelElement) {
+                this.currentModelElement.textContent = 'Selecting...';
+            }
+            if (this.modelScoresElement) {
+                this.modelScoresElement.style.display = 'none';
+            }
             
             // Remove turn counter if it exists
             const turnCounter = document.querySelector('.model-info .turn-counter');
@@ -986,7 +968,9 @@ class MentalHealthChat {
                     model: data.selected_model,
                     responseTime: data.response_time_ms || 100,
                     turnCount: data.turn_count,
-                    conversationMode: data.conversation_mode
+                    conversationMode: data.conversation_mode,
+                    confidenceScore: data.confidence_score,
+                    modelScores: data.model_scores
                 });
                 this.messageInput.value = '';
             }
@@ -1021,7 +1005,9 @@ class MentalHealthChat {
             
             // Update UI
             this.selectedModel = data.new_model;
-            this.currentModelElement.textContent = data.new_model.toUpperCase();
+            if (this.currentModelElement) {
+                this.currentModelElement.textContent = data.new_model.toUpperCase();
+            }
             
             // Close modal and show success
             this.closeModal();
@@ -1054,8 +1040,12 @@ class MentalHealthChat {
         }
         
         // Reset UI elements
-        this.currentModelElement.textContent = 'Selecting best model...';
-        this.sessionIdElement.textContent = 'New';
+        if (this.currentModelElement) {
+            this.currentModelElement.textContent = 'Selecting best model...';
+        }
+        if (this.sessionIdElement) {
+            this.sessionIdElement.textContent = 'New';
+        }
         
         const confidenceDisplay = document.getElementById('confidence-display');
         if (confidenceDisplay) {

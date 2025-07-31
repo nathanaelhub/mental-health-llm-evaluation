@@ -80,7 +80,11 @@
       "Bash(__NEW_LINE__ ls -la QUICK_START.md)",
       "Bash(pkill:*)",
       "Bash(for model in openai claude deepseek gemma)",
-      "Bash(PORT=8001 python simple_server.py)"
+      "Bash(PORT=8001 python simple_server.py)",
+      "Bash(git rm:*)",
+      "Bash(git add:*)",
+      "Bash(git check-ignore:*)",
+      "Bash(./scripts/test_session_curl.sh:*)"
     ],
     "deny": []
   }
