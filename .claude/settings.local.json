@@ -84,7 +84,10 @@
       "Bash(git rm:*)",
       "Bash(git add:*)",
       "Bash(git check-ignore:*)",
-      "Bash(./scripts/test_session_curl.sh:*)"
+      "Bash(./scripts/test_session_curl.sh:*)",
+      "Bash(set -a)",
+      "Bash(set +a)",
+      "Bash(sed:*)"
     ],
     "deny": []
   }

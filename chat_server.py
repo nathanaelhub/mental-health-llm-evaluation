@@ -28,6 +28,17 @@ import uvicorn
 import os
 import asyncio
 import json
+
+# =============================================================================
+# DEMO MODE CONFIGURATION - Prioritizes completion over speed
+# =============================================================================
+
+DEMO_MODE = True  # Set to True for presentation/demo
+
+if DEMO_MODE:
+    print("🎭 DEMO MODE ENABLED - Extended timeouts for local models")
+    print("⚠️  Local models will have extended timeouts to ensure completion")
+    print("💡 Demo optimized for reliability over speed")
 import logging
 from typing import Dict, Any, List, Optional
 
@@ -230,12 +241,12 @@ models_config = {
         'gemma': {'enabled': True, 'cost_per_token': 0.00003, 'model_name': 'google/gemma-3-12b'}
     },
     'default_model': 'openai',
-    'selection_timeout': 90.0,  # Increased for local models
+    'selection_timeout': 180.0 if DEMO_MODE else 90.0,  # 3 minutes for demo reliability
     'model_timeouts': {
-        'openai': 25.0,
-        'claude': 25.0,
-        'deepseek': 45.0,  # DeepSeek takes ~20s
-        'gemma': 50.0     # Gemma takes ~43s
+        'openai': 30.0,
+        'claude': 30.0,
+        'deepseek': 120.0 if DEMO_MODE else 45.0,  # 2 minutes for demo
+        'gemma': 120.0 if DEMO_MODE else 50.0      # 2 minutes for demo
     },
     'similarity_threshold': 0.9
 }
@@ -288,6 +299,17 @@ async def startup_event():
     
     # Initialize components with proper async context
     await initialize_components()
+    
+    # Demo mode messaging
+    if DEMO_MODE:
+        print("\n" + "="*60)
+        print("🎭 DEMO MODE ACTIVE")
+        print("="*60)
+        print("⚠️  Demo Mode: Local models have 2-minute timeouts")
+        print("⏱️  Total selection may take up to 3 minutes")
+        print("💡 Tip: Have backup slides ready during model evaluation")
+        print("🎯 Prioritizing completion over speed for presentation")
+        print("="*60)
     
     print("✅ Server startup complete - ready for connections")
 

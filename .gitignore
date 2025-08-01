@@ -251,3 +251,28 @@ CLAUDE.md
 docs/capstone_notes/*
 !docs/capstone_notes/README.md
 !docs/capstone_notes/.gitignore
+# Capstone private notes
+docs/capstone_notes/
+
+# Development artifacts
+*.log
+*.pyc
+__pycache__/
+
+# Local configuration
+.env
+*.db
+conversations.db
+
+# Temporary files
+temp/
+cache/
+
+# API keys and secrets
+*_api_key*
+*_secret*
+
+# Development test files
+scripts/test_*.py
+scripts/debug_*.py
+scripts/demo_*.py

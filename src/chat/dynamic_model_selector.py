@@ -307,15 +307,15 @@ class DynamicModelSelector:
         
         # Model timeout configuration - different timeouts for cloud vs local models
         self.model_timeouts = models_config.get('model_timeouts', {
-            'openai': 5.0,      # Fast cloud API
-            'claude': 5.0,      # Fast cloud API  
-            'deepseek': 10.0,   # Local model, may be slower
-            'gemma': 10.0       # Local model, may be slower
+            'openai': 30.0,     # Cloud API
+            'claude': 30.0,     # Cloud API  
+            'deepseek': 120.0,  # Local model - 2 minutes for demo purposes
+            'gemma': 120.0      # Local model - 2 minutes for demo purposes
         })
         
         # Selection configuration
         self.default_model = models_config.get('default_model', 'openai')
-        self.selection_timeout = models_config.get('selection_timeout', 15.0)  # Reduced from 40s
+        self.selection_timeout = models_config.get('selection_timeout', 150.0)  # 2.5 minutes total for all models
         self.similarity_threshold = models_config.get('similarity_threshold', 0.9)
         
         logger.info(f"DynamicModelSelector initialized with {len(self.models)} models")
@@ -570,7 +570,7 @@ class DynamicModelSelector:
                                    model_client: Any, 
                                    prompt: str, 
                                    context: Optional[str] = None,
-                                   max_retries: int = 2) -> Tuple[Any, str]:
+                                   max_retries: int = 1) -> Tuple[Any, str]:
         """Call model with retry logic for local models"""
         
         # Determine if this is a local model (needs retries)

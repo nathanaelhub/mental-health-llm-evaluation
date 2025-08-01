@@ -226,7 +226,7 @@ class MentalHealthEvaluator:
                 )
                 model_responses[model_name] = response
                 model_times[model_name] = response_time
-                model_total_costs[model_name] += cost
+                model_total_costs[model_name] += (cost or 0.0)
             
             # Evaluate all responses
             print("📏 Evaluating responses...")
