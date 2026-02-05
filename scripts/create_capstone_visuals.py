@@ -51,8 +51,8 @@ def create_figure_2_performance_landscape(data, output_dir):
         for dim in dimensions:
             model_scores[model][dim] = data['model_averages'][model][dim]
     
-    # Create radar chart
-    fig, ax = plt.subplots(figsize=(12, 10), subplot_kw=dict(projection='polar'))
+    # Create radar chart with better spacing
+    fig, ax = plt.subplots(figsize=(14, 12), subplot_kw=dict(projection='polar'))
     
     # Number of variables
     num_vars = len(dimensions)
@@ -65,38 +65,52 @@ def create_figure_2_performance_landscape(data, output_dir):
     colors = ['#1f77b4', '#ff7f0e', '#d62728', '#2ca02c']  # DeepSeek gets red for emphasis
     model_colors = dict(zip(models, colors))
     
-    # Plot each model
+    # Plot each model with better styling
     for i, model in enumerate(models):
         values = [model_scores[model][dim] for dim in dimensions]
         values += values[:1]  # Complete the circle
         
         # Special emphasis for DeepSeek
         if model == 'deepseek':
-            ax.plot(angles, values, 'o-', linewidth=4, label=f'{model_names[i]} (WINNER)', 
-                   color=model_colors[model], markersize=8)
-            ax.fill(angles, values, alpha=0.25, color=model_colors[model])
+            ax.plot(angles, values, 'o-', linewidth=5, label=f'{model_names[i]} (WINNER)', 
+                   color=model_colors[model], markersize=10, alpha=0.9)
+            ax.fill(angles, values, alpha=0.2, color=model_colors[model])
         else:
-            ax.plot(angles, values, 'o-', linewidth=2, label=model_names[i], 
-                   color=model_colors[model], markersize=6)
+            ax.plot(angles, values, 'o-', linewidth=3, label=model_names[i], 
+                   color=model_colors[model], markersize=7, alpha=0.8)
     
-    # Add labels
+    # Add labels with better spacing
     ax.set_xticks(angles[:-1])
-    ax.set_xticklabels(dimension_labels, fontsize=12, fontweight='bold')
-    ax.set_ylim(0, 10)
+    ax.set_xticklabels(dimension_labels, fontsize=13, fontweight='bold')
+    ax.tick_params(axis='x', pad=15)  # Add padding this way
+    ax.set_ylim(0, 11)  # More space at top
     ax.set_yticks([2, 4, 6, 8, 10])
-    ax.set_yticklabels(['2', '4', '6', '8', '10'], fontsize=10)
-    ax.grid(True)
+    ax.set_yticklabels(['2', '4', '6', '8', '10'], fontsize=11)
+    ax.grid(True, alpha=0.3)
     
-    # Title and legend
+    # Add value labels on the chart
+    for i, model in enumerate(models):
+        values = [model_scores[model][dim] for dim in dimensions]
+        for j, (angle, value) in enumerate(zip(angles[:-1], values)):
+            if model == 'deepseek':  # Only label DeepSeek for clarity
+                ax.text(angle, value + 0.3, f'{value:.1f}', 
+                       ha='center', va='center', fontsize=10, fontweight='bold',
+                       color=model_colors[model])
+    
+    # Title with better spacing
     plt.title('The Performance Landscape: DeepSeek\'s Therapeutic Dominance', 
-              size=16, fontweight='bold', pad=20)
-    plt.legend(loc='upper right', bbox_to_anchor=(1.3, 1.0), fontsize=11)
+              size=17, fontweight='bold', pad=30)
     
-    # Add annotation
-    plt.figtext(0.5, 0.02, 'DeepSeek R1 shows superior performance across therapeutic dimensions despite being free', 
-                ha='center', fontsize=10, style='italic')
+    # Legend with better positioning
+    plt.legend(loc='center', bbox_to_anchor=(0.5, -0.05), ncol=2, fontsize=12,
+              frameon=True, fancybox=True, shadow=True)
     
-    plt.tight_layout()
+    # Add annotation with better spacing
+    plt.figtext(0.5, 0.08, 'DeepSeek R1 shows superior performance across therapeutic dimensions despite being free', 
+                ha='center', fontsize=11, style='italic', weight='bold')
+    
+    # Better layout management
+    plt.tight_layout(rect=[0, 0.12, 1, 0.92])
     plt.savefig(output_dir / '2_category_radar.png', dpi=300, bbox_inches='tight')
     plt.close()
     
@@ -113,12 +127,12 @@ def create_figure_3_cost_effectiveness(data, output_dir):
     composite_scores = [data['model_averages'][key]['composite'] for key in model_keys]
     costs = [data['costs'][key] for key in model_keys]
     
-    # Create scatter plot
-    fig, ax = plt.subplots(figsize=(12, 8))
+    # Create scatter plot with better spacing
+    fig, ax = plt.subplots(figsize=(14, 10))
     
     # Create scatter plot
     colors = ['#1f77b4', '#ff7f0e', '#d62728', '#2ca02c']
-    sizes = [200 if model == 'DeepSeek R1' else 150 for model in models]
+    sizes = [250 if model == 'DeepSeek R1' else 180 for model in models]
     
     for i, (model, score, cost) in enumerate(zip(models, composite_scores, costs)):
         if model == 'DeepSeek R1':
@@ -126,45 +140,62 @@ def create_figure_3_cost_effectiveness(data, output_dir):
                       edgecolors='black', linewidth=3, label=f'{model} (UPSET WINNER!)')
         else:
             ax.scatter(cost, score, s=sizes[i], c=colors[i], alpha=0.7, 
-                      edgecolors='black', linewidth=1, label=model)
+                      edgecolors='black', linewidth=2, label=model)
     
     # Add trend line
     z = np.polyfit(costs, composite_scores, 1)
     p = np.poly1d(z)
     x_trend = np.linspace(0, max(costs), 100)
-    ax.plot(x_trend, p(x_trend), "--", alpha=0.5, color='gray')
+    ax.plot(x_trend, p(x_trend), "--", alpha=0.5, color='gray', linewidth=2)
     
-    # Annotations
+    # Smart annotations with better positioning
     for i, (model, score, cost) in enumerate(zip(models, composite_scores, costs)):
         if model == 'DeepSeek R1':
-            ax.annotate(f'{model}\n{score:.2f}/10\n$0.00', 
-                       (cost, score), xytext=(10, 10), textcoords='offset points',
-                       fontsize=11, fontweight='bold', ha='left',
-                       bbox=dict(boxstyle='round,pad=0.3', facecolor='yellow', alpha=0.7))
-        else:
+            # Position DeepSeek annotation to avoid title overlap
+            ax.annotate(f'{model}\n{score:.2f}/10\nFREE!', 
+                       (cost, score), xytext=(-80, -60), textcoords='offset points',
+                       fontsize=11, fontweight='bold', ha='center',
+                       bbox=dict(boxstyle='round,pad=0.4', facecolor='yellow', alpha=0.9),
+                       arrowprops=dict(arrowstyle='->', color='red', lw=2))
+        elif model == 'OpenAI GPT-4':
+            # Position OpenAI annotation to the right
             ax.annotate(f'{model}\n{score:.2f}/10\n${cost:.3f}', 
-                       (cost, score), xytext=(10, 10), textcoords='offset points',
-                       fontsize=10, ha='left')
+                       (cost, score), xytext=(15, 15), textcoords='offset points',
+                       fontsize=10, ha='left',
+                       bbox=dict(boxstyle='round,pad=0.3', facecolor='lightblue', alpha=0.7))
+        elif model == 'Claude-3':
+            # Position Claude annotation below
+            ax.annotate(f'{model}\n{score:.2f}/10\n${cost:.3f}', 
+                       (cost, score), xytext=(10, -40), textcoords='offset points',
+                       fontsize=10, ha='left',
+                       bbox=dict(boxstyle='round,pad=0.3', facecolor='wheat', alpha=0.7))
+        else:  # Gemma
+            # Position Gemma annotation to avoid bottom overlap
+            ax.annotate(f'{model}\n{score:.2f}/10\nFREE!', 
+                       (cost, score), xytext=(15, 25), textcoords='offset points',
+                       fontsize=10, ha='left',
+                       bbox=dict(boxstyle='round,pad=0.3', facecolor='lightgreen', alpha=0.7))
     
-    # Formatting
+    # Formatting with more space
     ax.set_xlabel('Cost per Response ($)', fontsize=14, fontweight='bold')
-    ax.set_ylabel('Therapeutic Quality Score', fontsize=14, fontweight='bold')
+    ax.set_ylabel('Therapeutic Quality Score (0-10)', fontsize=14, fontweight='bold')
     ax.set_title('When Free Beats Fee: The Cost-Performance Paradox', 
-                 fontsize=16, fontweight='bold')
+                 fontsize=16, fontweight='bold', pad=25)
     
-    # Add grid and formatting
+    # Add grid and formatting with more space
     ax.grid(True, alpha=0.3)
-    ax.set_xlim(-0.0005, 0.0035)
-    ax.set_ylim(3.5, 8.0)
+    ax.set_xlim(-0.0008, 0.0035)
+    ax.set_ylim(3.0, 8.5)  # More space top and bottom
     
-    # Legend
-    ax.legend(loc='upper left', fontsize=10)
+    # Legend with better positioning
+    ax.legend(loc='upper right', fontsize=11, frameon=True, fancybox=True, shadow=True)
     
-    # Add insight text
-    plt.figtext(0.5, 0.02, 'The inverse relationship between cost and quality challenges conventional wisdom', 
-                ha='center', fontsize=11, style='italic', weight='bold')
+    # Add insight text with proper spacing
+    plt.figtext(0.5, 0.08, 'The inverse relationship between cost and quality challenges conventional wisdom', 
+                ha='center', fontsize=12, style='italic', weight='bold')
     
-    plt.tight_layout()
+    # Better layout management
+    plt.tight_layout(rect=[0, 0.12, 1, 0.95])
     plt.savefig(output_dir / '3_cost_effectiveness.png', dpi=300, bbox_inches='tight')
     plt.close()
     
@@ -179,8 +210,8 @@ def create_figure_4_safety_metrics(data, output_dir):
     # Get safety scores (all perfect 10.0/10)
     safety_scores = [data['model_averages'][key]['safety'] for key in model_keys]
     
-    # Create single, clean bar chart with better spacing
-    fig, ax = plt.subplots(figsize=(14, 9))
+    # Create single, clean bar chart with optimal spacing
+    fig, ax = plt.subplots(figsize=(15, 10))
     
     # Colors with DeepSeek emphasized
     colors = ['#1f77b4', '#ff7f0e', '#d62728', '#2ca02c']
@@ -189,52 +220,51 @@ def create_figure_4_safety_metrics(data, output_dir):
     bars = ax.bar(models, safety_scores, color=colors, alpha=0.8, 
                   edgecolor='black', linewidth=2)
     
-    # Add value labels on bars with better spacing
+    # Add value labels on bars with optimal spacing
     for i, (bar, score) in enumerate(zip(bars, safety_scores)):
         height = bar.get_height()
-        ax.text(bar.get_x() + bar.get_width()/2., height + 0.2,
+        ax.text(bar.get_x() + bar.get_width()/2., height + 0.3,
                 f'{score:.1f}/10\nPERFECT', ha='center', va='bottom', 
-                fontsize=11, fontweight='bold', color='darkgreen')
+                fontsize=12, fontweight='bold', color='darkgreen')
     
     # Add perfect score line with proper spacing
     ax.axhline(y=10.0, color='green', linestyle='-', alpha=0.7, linewidth=3)
-    ax.text(0.02, 0.92, 'Perfect Safety Threshold: 10.0/10', 
+    ax.text(0.02, 0.88, 'Perfect Safety Threshold: 10.0/10', 
             transform=ax.transAxes, color='green', 
-            fontweight='bold', fontsize=11)
+            fontweight='bold', fontsize=12)
     
-    # Formatting with more space
+    # Formatting with optimal space and better title positioning
     ax.set_title('Safety Across the Board: Crisis Handling Isn\'t a Premium Feature', 
-                 fontsize=16, fontweight='bold', pad=25)
+                 fontsize=16, fontweight='bold', pad=40)  # Reduced font size, increased padding
     ax.set_ylabel('Safety Score (0-10)', fontsize=14, fontweight='bold')
-    ax.set_ylim(0, 11.5)  # More space for labels
+    ax.set_ylim(0, 12.5)  # Even more space for labels
     ax.grid(True, alpha=0.3, axis='y')
     
-    # Rotate x-axis labels with better spacing
-    ax.tick_params(axis='x', rotation=20, labelsize=11)
+    # Clean x-axis labels with better spacing
+    ax.tick_params(axis='x', rotation=15, labelsize=12)
     plt.setp(ax.get_xticklabels(), ha='right')
     
-    # Add key message box with better positioning
+    # Add key message box with strategic positioning
     message_text = """KEY FINDING:
 • Perfect 10.0/10 safety across all models
-• Crisis detection is universal, not premium
+• Crisis detection is universal, not premium  
 • Zero safety failures at any price point
 • Free models = Premium safety performance"""
     
-    ax.text(0.02, 0.75, message_text, transform=ax.transAxes, 
-            fontsize=10, verticalalignment='top', horizontalalignment='left',
-            bbox=dict(boxstyle='round,pad=0.6', facecolor='lightgreen', alpha=0.8))
+    ax.text(0.02, 0.60, message_text, transform=ax.transAxes, 
+            fontsize=11, verticalalignment='top', horizontalalignment='left',
+            bbox=dict(boxstyle='round,pad=0.5', facecolor='lightgreen', alpha=0.9))
     
-    # Add subtitle with proper spacing
-    plt.figtext(0.5, 0.02, 'Universal safety excellence: Free models match premium performance in crisis handling', 
+    # Add subtitle with much better spacing
+    plt.figtext(0.5, 0.06, 'Universal safety excellence: Free models match premium performance in crisis handling', 
                 ha='center', fontsize=11, style='italic', weight='bold')
     
-    # Better layout management
-    plt.tight_layout(rect=[0, 0.05, 1, 0.95])
-    plt.subplots_adjust(bottom=0.15, top=0.85)  # Extra space for labels
+    # Better layout management with more space at top
+    plt.tight_layout(rect=[0, 0.10, 1, 0.88])  # More space at top, less at bottom
     plt.savefig(output_dir / '4_safety_metrics.png', dpi=300, bbox_inches='tight')
     plt.close()
     
-    print("✅ Created Figure 4: Simplified Safety Metrics")
+    print("✅ Created Figure 4: Optimized Safety Metrics")
 
 def create_figure_5_statistical_summary(data, output_dir):
     """Figure 5: The Statistical Proof - Effect Sizes and Significance"""
@@ -263,8 +293,8 @@ def create_figure_5_statistical_summary(data, output_dir):
         d = (mean1 - mean2) / pooled_std if pooled_std > 0 else 0
         return d
     
-    # Create comprehensive statistical summary
-    fig, ((ax1, ax2), (ax3, ax4)) = plt.subplots(2, 2, figsize=(16, 12))
+    # Create comprehensive statistical summary with better spacing
+    fig, ((ax1, ax2), (ax3, ax4)) = plt.subplots(2, 2, figsize=(18, 14))
     
     # 1. Mean comparison with error bars
     x_pos = np.arange(len(models))
@@ -279,18 +309,18 @@ def create_figure_5_statistical_summary(data, output_dir):
     bars[2].set_edgecolor('red')
     bars[2].set_linewidth(4)
     
-    ax1.set_title('Composite Scores with Standard Deviation', fontsize=14, fontweight='bold')
-    ax1.set_ylabel('Composite Score', fontsize=12)
+    ax1.set_title('Composite Scores with Standard Deviation', fontsize=15, fontweight='bold', pad=15)
+    ax1.set_ylabel('Composite Score', fontsize=13)
     ax1.set_xticks(x_pos)
-    ax1.set_xticklabels(model_names)
+    ax1.set_xticklabels(model_names, fontsize=12)
     ax1.grid(True, alpha=0.3)
     ax1.set_ylim(0, 10)
     
-    # Add significance stars
-    ax1.text(2, composite_means[2] + composite_stds[2] + 0.5, '***', 
-            ha='center', fontsize=20, fontweight='bold', color='red')
+    # Add significance stars with better positioning
+    ax1.text(2, composite_means[2] + composite_stds[2] + 0.3, '***', 
+            ha='center', fontsize=18, fontweight='bold', color='red')
     
-    # 2. Effect sizes heatmap
+    # 2. Effect sizes heatmap with better formatting
     effect_sizes = np.zeros((len(models), len(dimensions)))
     
     # Calculate effect sizes comparing each model to DeepSeek
@@ -306,17 +336,19 @@ def create_figure_5_statistical_summary(data, output_dir):
             else:
                 effect_sizes[i, j] = 0  # DeepSeek compared to itself
     
-    # Create heatmap
+    # Create heatmap with better spacing
     sns.heatmap(effect_sizes, 
                 xticklabels=['Empathy', 'Safety', 'Therapeutic', 'Clarity', 'Composite'],
                 yticklabels=model_names,
                 annot=True, fmt='.2f', cmap='RdYlBu_r', center=0,
-                ax=ax2, cbar_kws={'label': 'Cohen\'s d (Effect Size)'})
+                ax=ax2, cbar_kws={'label': 'Cohen\'s d (Effect Size)'},
+                square=True, linewidths=0.5)
     
-    ax2.set_title('Effect Sizes: DeepSeek vs Others', fontsize=14, fontweight='bold')
-    ax2.set_xlabel('Therapeutic Dimensions', fontsize=12)
+    ax2.set_title('Effect Sizes: DeepSeek vs Others', fontsize=15, fontweight='bold', pad=15)
+    ax2.set_xlabel('Therapeutic Dimensions', fontsize=13)
+    ax2.tick_params(axis='both', labelsize=11)
     
-    # 3. Statistical significance interpretation
+    # 3. Statistical significance interpretation with better layout
     effect_categories = ['Small\n(0.2)', 'Medium\n(0.5)', 'Large\n(0.8)', 'Very Large\n(1.2+)']
     effect_thresholds = [0.2, 0.5, 0.8, 1.2]
     effect_colors = ['#ffffcc', '#fed976', '#fd8d3c', '#e31a1c']
@@ -338,18 +370,19 @@ def create_figure_5_statistical_summary(data, output_dir):
     
     bars3 = ax3.bar(effect_categories, effect_counts, color=effect_colors, 
                     alpha=0.8, edgecolor='black')
-    ax3.set_title('Distribution of Effect Sizes', fontsize=14, fontweight='bold')
-    ax3.set_ylabel('Number of Comparisons', fontsize=12)
+    ax3.set_title('Distribution of Effect Sizes', fontsize=15, fontweight='bold', pad=15)
+    ax3.set_ylabel('Number of Comparisons', fontsize=13)
+    ax3.tick_params(axis='both', labelsize=11)
     ax3.grid(True, alpha=0.3)
     
-    # Add value labels
+    # Add value labels with better positioning
     for bar, count in zip(bars3, effect_counts):
         if count > 0:
             height = bar.get_height()
-            ax3.text(bar.get_x() + bar.get_width()/2., height + 0.1,
-                    f'{count}', ha='center', va='bottom', fontweight='bold')
+            ax3.text(bar.get_x() + bar.get_width()/2., height + 0.05,
+                    f'{count}', ha='center', va='bottom', fontweight='bold', fontsize=12)
     
-    # 4. Performance ranking visualization
+    # 4. Performance ranking visualization with better formatting
     dimension_rankings = {}
     for dim in dimensions:
         dim_means = [(model, stats_data[model][dim]['mean']) for model in models]
@@ -366,25 +399,29 @@ def create_figure_5_statistical_summary(data, output_dir):
                 xticklabels=['Empathy', 'Safety', 'Therapeutic', 'Clarity', 'Composite'],
                 yticklabels=model_names,
                 annot=True, fmt='.0f', cmap='RdYlGn_r', 
-                ax=ax4, cbar_kws={'label': 'Ranking (1=Best)'})
+                ax=ax4, cbar_kws={'label': 'Ranking (1=Best)'},
+                square=True, linewidths=0.5)
     
-    ax4.set_title('Performance Rankings by Dimension', fontsize=14, fontweight='bold')
-    ax4.set_xlabel('Therapeutic Dimensions', fontsize=12)
+    ax4.set_title('Performance Rankings by Dimension', fontsize=15, fontweight='bold', pad=15)
+    ax4.set_xlabel('Therapeutic Dimensions', fontsize=13)
+    ax4.tick_params(axis='both', labelsize=11)
     
+    # Better title and subtitle positioning
     plt.suptitle('Statistical Evidence: Large Effect Sizes Confirm Meaningful Differences', 
-                 fontsize=16, fontweight='bold', y=0.98)
+                 fontsize=17, fontweight='bold', y=0.96)
     
-    plt.figtext(0.5, 0.02, 'For the statistically minded: These differences aren\'t just meaningful - they\'re dramatic', 
-                ha='center', fontsize=11, style='italic', weight='bold')
+    plt.figtext(0.5, 0.08, 'For the statistically minded: These differences aren\'t just meaningful - they\'re dramatic', 
+                ha='center', fontsize=12, style='italic', weight='bold')
     
-    plt.tight_layout()
+    # Optimal layout management
+    plt.tight_layout(rect=[0, 0.12, 1, 0.92])
     plt.savefig(output_dir / '5_statistical_summary.png', dpi=300, bbox_inches='tight')
     plt.close()
     
-    print("✅ Created Figure 5: Statistical Summary")
+    print("✅ Created Figure 5: Optimized Statistical Summary")
 
 def create_figure_1_overall_comparison(data, output_dir):
-    """Figure 1: Visual Proof of the Underdog Story - Overall Performance Comparison"""
+    """Figure 1: Visual Proof of the Underdog Story - Simplified Clean Design"""
     
     models = ['OpenAI GPT-4', 'Claude-3', 'DeepSeek R1', 'Gemma-3 12B']
     model_keys = ['openai', 'claude', 'deepseek', 'gemma']
@@ -393,15 +430,8 @@ def create_figure_1_overall_comparison(data, output_dir):
     composite_scores = [data['model_averages'][key]['composite'] for key in model_keys]
     costs = [data['costs'][key] for key in model_keys]
     
-    # Create a comprehensive comparison visualization
-    fig = plt.figure(figsize=(18, 12))
-    
-    # Create grid layout for multiple subplots with better spacing
-    gs = fig.add_gridspec(2, 3, height_ratios=[2.5, 1], width_ratios=[3, 1, 1], 
-                         hspace=0.4, wspace=0.3)
-    
-    # Main bar chart - Composite Performance
-    ax_main = fig.add_subplot(gs[0, :2])
+    # Create simplified single-panel design
+    fig, ax = plt.subplots(figsize=(14, 8))
     
     # Colors with DeepSeek emphasized
     colors = ['#1f77b4', '#ff7f0e', '#d62728', '#2ca02c']
@@ -412,145 +442,81 @@ def create_figure_1_overall_comparison(data, output_dir):
     for i, model in enumerate(models):
         if 'DeepSeek' in model:
             bar_colors.append('#d62728')  # Red for emphasis
-            edge_colors.append('#8B0000')  # Dark red border
+            edge_colors.append('#8B0000')  # Dark red border  
             edge_widths.append(4)
         else:
             bar_colors.append(colors[i])
             edge_colors.append('black')
-            edge_widths.append(1)
+            edge_widths.append(2)
     
-    bars = ax_main.bar(models, composite_scores, color=bar_colors, 
-                       edgecolor=edge_colors, linewidth=edge_widths, alpha=0.8)
+    # Create main bars
+    bars = ax.bar(models, composite_scores, color=bar_colors, 
+                  edgecolor=edge_colors, linewidth=edge_widths, alpha=0.8)
     
-    # Add value labels on bars with better spacing
-    for i, (bar, score) in enumerate(zip(bars, composite_scores)):
+    # Add clean value labels
+    for i, (bar, score, cost) in enumerate(zip(bars, composite_scores, costs)):
         height = bar.get_height()
         if 'DeepSeek' in models[i]:
             # Special annotation for DeepSeek
-            ax_main.text(bar.get_x() + bar.get_width()/2., height + 0.3,
-                        f'{score:.2f}\nWINNER!', ha='center', va='bottom', 
-                        fontsize=13, fontweight='bold', color='darkred',
-                        bbox=dict(boxstyle='round,pad=0.4', facecolor='yellow', alpha=0.8))
+            ax.text(bar.get_x() + bar.get_width()/2., height + 0.3,
+                   f'{score:.2f}\nWINNER\n$0.00', ha='center', va='bottom', 
+                   fontsize=12, fontweight='bold', color='darkred',
+                   bbox=dict(boxstyle='round,pad=0.3', facecolor='yellow', alpha=0.8))
         else:
-            ax_main.text(bar.get_x() + bar.get_width()/2., height + 0.15,
-                        f'{score:.2f}', ha='center', va='bottom', 
-                        fontsize=12, fontweight='bold')
+            # Clean labels for others
+            cost_str = f'${cost:.3f}' if cost > 0 else '$0.00'
+            ax.text(bar.get_x() + bar.get_width()/2., height + 0.15,
+                   f'{score:.2f}\n{cost_str}', ha='center', va='bottom', 
+                   fontsize=11, fontweight='bold')
     
-    # Formatting with more space for labels
-    ax_main.set_title('The Underdog Story: DeepSeek\'s Therapeutic Superiority', 
-                     fontsize=17, fontweight='bold', pad=25)
-    ax_main.set_ylabel('Therapeutic Quality Score (0-10)', fontsize=13, fontweight='bold')
-    ax_main.set_ylim(0, 10.0)  # More space for labels
-    ax_main.grid(True, alpha=0.3, axis='y')
-    
-    # Rotate x-axis labels to prevent overlap
-    ax_main.tick_params(axis='x', rotation=20, labelsize=11)
-    plt.setp(ax_main.get_xticklabels(), ha='right')
-    
-    # Add horizontal line at DeepSeek's performance for reference
+    # Add performance gaps as text annotations with better positioning
     deepseek_score = composite_scores[2]
-    ax_main.axhline(y=deepseek_score, color='red', linestyle='--', alpha=0.5, linewidth=2)
-    ax_main.text(0.02, deepseek_score + 0.15, f'DeepSeek Benchmark: {deepseek_score:.2f}', 
-                transform=ax_main.get_yaxis_transform(), color='red', fontweight='bold', fontsize=11)
-    
-    # Cost subplot
-    ax_cost = fig.add_subplot(gs[0, 2])
-    
-    # Convert costs to readable format (cents)
-    cost_cents = [c * 100 for c in costs]
-    cost_labels = ['$0.20¢', '$0.30¢', '$0.00¢', '$0.00¢']
-    
-    bars_cost = ax_cost.bar(range(len(models)), cost_cents, color=bar_colors, 
-                           edgecolor=edge_colors, linewidth=[2 if 'DeepSeek' in m else 1 for m in models])
-    
-    # Add value labels
-    for i, (bar, cost_cent, label) in enumerate(zip(bars_cost, cost_cents, cost_labels)):
-        height = bar.get_height()
-        if cost_cent == 0:
-            ax_cost.text(bar.get_x() + bar.get_width()/2., height + 0.005,
-                        'FREE!', ha='center', va='bottom', 
-                        fontsize=10, fontweight='bold', color='green')
-        else:
-            ax_cost.text(bar.get_x() + bar.get_width()/2., height + 0.005,
-                        label, ha='center', va='bottom', 
-                        fontsize=9, fontweight='bold')
-    
-    ax_cost.set_title('Cost per\nResponse', fontsize=13, fontweight='bold', pad=15)
-    ax_cost.set_ylabel('Cost (cents)', fontsize=11)
-    ax_cost.set_xticks(range(len(models)))
-    ax_cost.set_xticklabels([m.split()[0] for m in models], rotation=45, ha='right', fontsize=10)
-    ax_cost.grid(True, alpha=0.3, axis='y')
-    
-    # Performance gap analysis - bottom subplot
-    ax_gaps = fig.add_subplot(gs[1, :])
-    
-    # Calculate performance gaps relative to DeepSeek
-    deepseek_idx = 2
-    gaps = []
-    gap_labels = []
-    
     for i, (model, score) in enumerate(zip(models, composite_scores)):
-        if i != deepseek_idx:
-            gap = composite_scores[deepseek_idx] - score
-            gaps.append(gap)
-            gap_labels.append(f'{model}\n-{gap:.2f} points')
-        else:
-            gaps.append(0)
-            gap_labels.append(f'{model}\n(Baseline)')
+        if 'DeepSeek' not in model:
+            gap = deepseek_score - score
+            # Position gap badges at a consistent height for visibility
+            gap_y_position = max(score/2, 1.5)  # Ensure minimum height for visibility
+            ax.text(bars[i].get_x() + bars[i].get_width()/2., gap_y_position,
+                   f'-{gap:.1f}', ha='center', va='center', 
+                   fontsize=9, fontweight='bold', color='white',
+                   bbox=dict(boxstyle='round,pad=0.2', facecolor='red', alpha=0.8))
     
-    # Create gap bars
-    gap_colors = ['lightcoral' if g > 0 else 'lightblue' for g in gaps]
-    gap_colors[deepseek_idx] = 'gold'  # DeepSeek as baseline
+    # Add DeepSeek benchmark line
+    ax.axhline(y=deepseek_score, color='red', linestyle='--', alpha=0.6, linewidth=2)
+    ax.text(0.98, deepseek_score + 0.1, f'DeepSeek: {deepseek_score:.2f}', 
+            transform=ax.get_yaxis_transform(), ha='right', color='red', 
+            fontweight='bold', fontsize=11)
     
-    bars_gap = ax_gaps.bar(models, gaps, color=gap_colors, edgecolor='black', alpha=0.7)
+    # Clean formatting
+    ax.set_title('The Underdog Story: DeepSeek Beats Premium Models at $0 Cost', 
+                fontsize=16, fontweight='bold', pad=20)
+    ax.set_ylabel('Therapeutic Quality Score (0-10)', fontsize=13, fontweight='bold')
+    ax.set_ylim(0, 9.5)
+    ax.grid(True, alpha=0.3, axis='y')
     
-    # Add gap value labels with better positioning
-    for i, (bar, gap, label) in enumerate(zip(bars_gap, gaps, gap_labels)):
-        height = bar.get_height()
-        y_pos = height + 0.15 if height >= 0 else height - 0.2
-        # Simplify labels to avoid crowding
-        if 'DeepSeek' in models[i]:
-            display_label = f'{models[i].split()[0]}\n(Baseline)'
-        else:
-            display_label = f'{models[i].split()[0]}\n-{abs(gap):.1f} pts'
-        
-        ax_gaps.text(bar.get_x() + bar.get_width()/2., y_pos,
-                    display_label, ha='center', va='bottom' if height >= 0 else 'top', 
-                    fontsize=10, fontweight='bold')
+    # Clean x-axis labels
+    ax.tick_params(axis='x', rotation=15, labelsize=11)
+    plt.setp(ax.get_xticklabels(), ha='right')
     
-    ax_gaps.set_title('Performance Gap Analysis: How Far Behind the Competition Falls', 
-                     fontsize=13, fontweight='bold', pad=15)
-    ax_gaps.set_ylabel('Points Behind\nDeepSeek', fontsize=11)
-    ax_gaps.axhline(y=0, color='black', linestyle='-', linewidth=1)
-    ax_gaps.grid(True, alpha=0.3, axis='y')
-    ax_gaps.set_ylim(-4, 2.0)  # More space for labels
+    # Single key insight box
+    insights_text = """THE UPSET:
+• DeepSeek: FREE + Highest Score (7.90/10)
+• Beats expensive models by 1.1-2.5 points
+• Proves cost ≠ quality in AI therapeutics"""
     
-    # Set x-axis labels properly
-    ax_gaps.tick_params(axis='x', labelsize=10)
+    ax.text(0.02, 0.98, insights_text, transform=ax.transAxes, 
+            fontsize=11, verticalalignment='top', 
+            bbox=dict(boxstyle='round,pad=0.5', facecolor='lightgreen', alpha=0.9))
     
-    # Add insights text box with better positioning
-    insights_text = """KEY INSIGHTS:
-• DeepSeek: FREE + Highest Quality (7.90/10)
-• Premium models trail by 1.1-2.5 points
-• Zero correlation: cost ≠ quality
-• Perfect safety across all models"""
-    
-    ax_gaps.text(0.02, 0.85, insights_text, transform=ax_gaps.transAxes, 
-                fontsize=10, verticalalignment='top', 
-                bbox=dict(boxstyle='round,pad=0.4', facecolor='lightblue', alpha=0.8))
-    
-    # Main title and subtitle with better spacing
-    fig.suptitle('Breaking Down the Upset: The Underdog Story', 
-                fontsize=20, fontweight='bold', y=0.96)
-    
-    plt.figtext(0.5, 0.02, 'Visual proof that the most expensive isn\'t always the best - DeepSeek rewrites the rules', 
+    # Clean subtitle
+    plt.figtext(0.5, 0.02, 'The most expensive isn\'t always the best - DeepSeek rewrites AI pricing assumptions', 
                 ha='center', fontsize=12, style='italic', weight='bold')
     
-    plt.tight_layout(rect=[0, 0.04, 1, 0.94])  # Leave space for title and subtitle
+    plt.tight_layout(rect=[0, 0.05, 1, 0.95])
     plt.savefig(output_dir / '1_overall_comparison.png', dpi=300, bbox_inches='tight')
     plt.close()
     
-    print("✅ Created Figure 1: Overall Comparison - The Underdog Story")
+    print("✅ Created Figure 1: Simplified Overall Comparison")
 
 def main():
     """Generate all capstone paper visualizations"""

@@ -323,8 +323,13 @@ class DynamicModelSelector:
     def _initialize_models(self, models_config: Dict[str, Any]) -> Dict[str, Any]:
         """Initialize model clients from configuration"""
         models = {}
-        
+
         for model_id, config in models_config.get('models', {}).items():
+            # Skip disabled models
+            if not config.get('enabled', True):
+                logger.info(f"Skipping disabled model: {model_id}")
+                continue
+
             try:
                 if model_id == 'openai':
                     from ..models.openai_client import OpenAIClient
@@ -341,14 +346,14 @@ class DynamicModelSelector:
                 else:
                     logger.warning(f"Unknown model type: {model_id}")
                     continue
-                    
+
                 logger.info(f"Initialized model client: {model_id}")
-                
+
             except ImportError as e:
                 logger.warning(f"Could not initialize {model_id}: {e}")
             except Exception as e:
                 logger.error(f"Error initializing {model_id}: {e}")
-        
+
         return models
     
     def prompt_classification(self, prompt: str, context: Optional[str] = None) -> PromptType:

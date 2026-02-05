@@ -63,11 +63,11 @@ from src.chat.persistent_session_store import SessionStoreType
 
 # === REAL LLM EVALUATION (ONLY MODE) ===
 # Configure local models
-os.environ["LOCAL_LLM_SERVER"] = "192.168.86.23:1234"
+os.environ["LOCAL_LLM_SERVER"] = "192.168.86.108:1234"
 
 print("🤖 Mental Health Chat Server - Real LLM Evaluation Mode")
 print("✅ Using actual LLM models with therapeutic evaluation")
-print("🌐 Local models: 192.168.86.23:1234")
+print("🌐 Local models: 192.168.86.108:1234")
 print("⚠️  Responses will take 30-60 seconds (real model evaluation)")
 
 
@@ -77,21 +77,20 @@ async def run_real_model_selection(prompt: str) -> Dict[str, Any]:
     
     # Initialize the dynamic model selector if not already done
     if not hasattr(app.state, 'model_selector'):
-        # Get model configurations for available models
+        # Get model configurations for available models (OpenAI disabled)
         models_config = {
             'models': {
-                'openai': {'enabled': True, 'cost_per_token': 0.0001, 'model_name': 'gpt-4'},
+                'openai': {'enabled': False, 'cost_per_token': 0.0001, 'model_name': 'gpt-4'},  # Disabled
                 'claude': {'enabled': True, 'cost_per_token': 0.00015, 'model_name': 'claude-3'},
                 'deepseek': {'enabled': True, 'cost_per_token': 0.00005, 'model_name': 'deepseek/deepseek-r1-0528-qwen3-8b'},
                 'gemma': {'enabled': True, 'cost_per_token': 0.00003, 'model_name': 'google/gemma-3-12b'}
             },
-            'default_model': 'openai',
-            'selection_timeout': 90.0,  # Increased for local models
+            'default_model': 'claude',
+            'selection_timeout': 180.0,  # 3 minutes for demo reliability
             'model_timeouts': {
-                'openai': 25.0,
-                'claude': 25.0, 
-                'deepseek': 45.0,  # DeepSeek takes ~20s
-                'gemma': 50.0     # Gemma takes ~43s
+                'claude': 30.0,
+                'deepseek': 120.0,  # 2 minutes for local model
+                'gemma': 120.0     # 2 minutes for local model
             },
             'similarity_threshold': 0.9
         }
@@ -172,12 +171,8 @@ def generate_selection_reasoning(selected_model: str, model_scores: Dict[str, fl
     
     return ". ".join(reasoning_parts) + "."
 
-# API model credentials check
+# API model credentials check (OpenAI removed - API limit depleted)
 API_MODEL_CONFIG = {
-    'openai': {
-        'api_key_env': 'OPENAI_API_KEY',
-        'test_model': 'gpt-3.5-turbo'
-    },
     'claude': {
         'api_key_env': 'ANTHROPIC_API_KEY',
         'test_model': 'claude-3-haiku-20240307'
@@ -232,18 +227,17 @@ server_start_time = None
 model_selector = None
 session_manager = None
 
-# Models configuration - all 4 models as specified
+# Models configuration - 3 models for demo (OpenAI disabled - API limit depleted)
 models_config = {
     'models': {
-        'openai': {'enabled': True, 'cost_per_token': 0.0001, 'model_name': 'gpt-4'},
+        'openai': {'enabled': False, 'cost_per_token': 0.0001, 'model_name': 'gpt-4'},  # Disabled for demo
         'claude': {'enabled': True, 'cost_per_token': 0.00015, 'model_name': 'claude-3'},
         'deepseek': {'enabled': True, 'cost_per_token': 0.00005, 'model_name': 'deepseek/deepseek-r1-0528-qwen3-8b'},
         'gemma': {'enabled': True, 'cost_per_token': 0.00003, 'model_name': 'google/gemma-3-12b'}
     },
-    'default_model': 'openai',
+    'default_model': 'claude',  # Changed default since OpenAI is disabled
     'selection_timeout': 180.0 if DEMO_MODE else 90.0,  # 3 minutes for demo reliability
     'model_timeouts': {
-        'openai': 30.0,
         'claude': 30.0,
         'deepseek': 120.0 if DEMO_MODE else 45.0,  # 2 minutes for demo
         'gemma': 120.0 if DEMO_MODE else 50.0      # 2 minutes for demo
@@ -353,7 +347,7 @@ async def chat_interface(request: Request):
     config = {
         "enable_streaming": False,  # Disable streaming for basic functionality
         "enable_caching": True,
-        "available_models": ["openai", "claude", "deepseek", "gemma"]
+        "available_models": ["claude", "deepseek", "gemma"]
     }
     
     try:
@@ -396,7 +390,7 @@ async def get_status():
     return StatusResponse(
         status=overall_status,
         version="1.0.0-fixed",
-        available_models=["openai", "claude", "deepseek", "gemma"] if model_selector else [],
+        available_models=["claude", "deepseek", "gemma"] if model_selector else [],
         uptime_seconds=uptime
     )
 
@@ -410,13 +404,6 @@ async def get_models_status():
         )
     
     models = {
-        "openai": {
-            "enabled": True,
-            "status": "available",
-            "cost_per_token": 0.0001,
-            "model_name": "gpt-4",
-            "specialties": ["general_support", "crisis", "anxiety", "depression"]
-        },
         "claude": {
             "enabled": True,
             "status": "available",
@@ -439,10 +426,10 @@ async def get_models_status():
             "specialties": ["general_support", "relationship", "wellness"]
         }
     }
-    
+
     return ModelStatusResponse(
         models=models,
-        total_available=len(models)
+        total_available=len(models)  # Now 3 models
     )
 
 
