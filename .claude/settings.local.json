@@ -62,7 +62,10 @@
       "Bash(git rebase:*)",
       "Bash(git stash pop:*)",
       "Bash(git stash drop:*)",
-      "Bash(git push:*)"
+      "Bash(git push:*)",
+      "Bash(wc:*)",
+      "Bash(du:*)",
+      "Bash(git checkout:*)"
     ],
     "deny": []
   }

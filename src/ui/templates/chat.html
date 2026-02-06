@@ -55,21 +55,25 @@
             <div class="welcome-message" id="welcome-message">
                 <div class="message system-message">
                     <div class="message-content">
+                        <button class="welcome-hide-btn" onclick="hideWelcome()" title="Hide welcome message">
+                            <i class="fas fa-times"></i>
+                        </button>
                         <div class="system-avatar">
                             <i class="fas fa-heart"></i>
                         </div>
                         <div class="message-text">
                             <p><strong>Welcome to Mental Health Support Chat</strong></p>
-                            <p>I'm here to provide compassionate support and evidence-based guidance. Our intelligent system will automatically select the best AI model for your specific needs.</p>
-                            <p><strong>How it works:</strong></p>
-                            <ul>
-                                <li>Your first message will be analyzed to find the most suitable AI model</li>
-                                <li>All 4 models (OpenAI, Claude, DeepSeek, Gemma) are evaluated with confidence scores</li>
-                                <li>All subsequent messages will continue with that selected model</li>
-                                <li>You can start a new conversation anytime to re-select models</li>
-                            </ul>
-                            <p><small><span style="color: #06b6d4;">📖 See /docs/UI_SCORING_EXPLANATION.md to learn how model selection works</span></small></p>
-                            <p><strong>Important:</strong> This is a supportive tool, not a replacement for professional mental health services. If you're experiencing a crisis, please contact emergency services or a crisis helpline.</p>
+                            <p>Our AI system evaluates <strong>4 models</strong> (OpenAI, Claude, DeepSeek, Gemma) to find the best fit for your needs.</p>
+                            <details class="how-it-works">
+                                <summary><i class="fas fa-info-circle"></i> How it works</summary>
+                                <ul>
+                                    <li>Your first message is analyzed to select the most suitable AI</li>
+                                    <li>Models are scored on empathy, therapeutic value, safety & clarity</li>
+                                    <li>Subsequent messages continue with the selected model</li>
+                                    <li>Click "New Chat" anytime to re-evaluate</li>
+                                </ul>
+                            </details>
+                            <p class="disclaimer"><i class="fas fa-exclamation-circle"></i> <small>This is a supportive tool, not a replacement for professional services. In crisis, contact emergency services or call 988.</small></p>
                             <p>💬 <strong>What's on your mind today?</strong></p>
                         </div>
                     </div>

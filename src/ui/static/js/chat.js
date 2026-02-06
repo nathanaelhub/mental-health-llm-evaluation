@@ -1107,6 +1107,12 @@ window.forceReselection = () => chat.forceReselection();
 window.switchToModel = (modelName) => chat.switchToModel(modelName);
 window.startNewConversation = () => chat.startNewConversation();
 window.showModelSwitchModal = () => chat.showModelSwitchModal();
+window.hideWelcome = () => {
+    const welcome = document.getElementById('welcome-message');
+    if (welcome) {
+        welcome.classList.add('hidden');
+    }
+};
 
 // Initialize chat when DOM is loaded
 document.addEventListener('DOMContentLoaded', () => {

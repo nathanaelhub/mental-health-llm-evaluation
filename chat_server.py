@@ -22,10 +22,10 @@ Then visit: http://localhost:8000/chat
 """
 
 import sys
+import os
 from pathlib import Path
 import time
 import uvicorn
-import os
 import asyncio
 import json
 
@@ -33,7 +33,8 @@ import json
 # DEMO MODE CONFIGURATION - Prioritizes completion over speed
 # =============================================================================
 
-DEMO_MODE = True  # Set to True for presentation/demo
+# Demo mode can be set via environment variable (default: False for normal operation)
+DEMO_MODE = os.environ.get("DEMO_MODE", "false").lower() in ("true", "1", "yes")
 
 if DEMO_MODE:
     print("🎭 DEMO MODE ENABLED - Extended timeouts for local models")
@@ -50,6 +51,7 @@ logger = logging.getLogger(__name__)
 sys.path.insert(0, str(Path(__file__).parent))
 sys.path.insert(0, str(Path(__file__).parent / "src"))
 
+from contextlib import asynccontextmanager
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
@@ -63,11 +65,11 @@ from src.chat.persistent_session_store import SessionStoreType
 
 # === REAL LLM EVALUATION (ONLY MODE) ===
 # Configure local models
-os.environ["LOCAL_LLM_SERVER"] = "192.168.86.108:1234"
+os.environ["LOCAL_LLM_SERVER"] = "192.168.86.33:1234"
 
 print("🤖 Mental Health Chat Server - Real LLM Evaluation Mode")
 print("✅ Using actual LLM models with therapeutic evaluation")
-print("🌐 Local models: 192.168.86.108:1234")
+print("🌐 Local models: 192.168.86.33:1234")
 print("⚠️  Responses will take 30-60 seconds (real model evaluation)")
 
 
@@ -77,18 +79,19 @@ async def run_real_model_selection(prompt: str) -> Dict[str, Any]:
     
     # Initialize the dynamic model selector if not already done
     if not hasattr(app.state, 'model_selector'):
-        # Get model configurations for available models (OpenAI disabled)
+        # Get model configurations for available models (all 4 models enabled)
         models_config = {
             'models': {
-                'openai': {'enabled': False, 'cost_per_token': 0.0001, 'model_name': 'gpt-4'},  # Disabled
-                'claude': {'enabled': True, 'cost_per_token': 0.00015, 'model_name': 'claude-3'},
-                'deepseek': {'enabled': True, 'cost_per_token': 0.00005, 'model_name': 'deepseek/deepseek-r1-0528-qwen3-8b'},
-                'gemma': {'enabled': True, 'cost_per_token': 0.00003, 'model_name': 'google/gemma-3-12b'}
+                'openai': {'enabled': True, 'cost_per_token': 0.00015, 'model_name': 'gpt-4o-mini'},
+                'claude': {'enabled': True, 'cost_per_token': 0.00025, 'model_name': 'claude-3-5-haiku-20241022'},
+                'deepseek': {'enabled': True, 'cost_per_token': 0.0, 'model_name': 'deepseek/deepseek-r1-0528-qwen3-8b'},
+                'gemma': {'enabled': True, 'cost_per_token': 0.0, 'model_name': 'google/gemma-3-12b'}
             },
-            'default_model': 'claude',
+            'default_model': 'openai',
             'selection_timeout': 180.0,  # 3 minutes for demo reliability
             'model_timeouts': {
-                'claude': 30.0,
+                'openai': 30.0,    # Cloud API
+                'claude': 30.0,    # Cloud API
                 'deepseek': 120.0,  # 2 minutes for local model
                 'gemma': 120.0     # 2 minutes for local model
             },
@@ -171,20 +174,56 @@ def generate_selection_reasoning(selected_model: str, model_scores: Dict[str, fl
     
     return ". ".join(reasoning_parts) + "."
 
-# API model credentials check (OpenAI removed - API limit depleted)
+# API model credentials check
 API_MODEL_CONFIG = {
+    'openai': {
+        'api_key_env': 'OPENAI_API_KEY',
+        'test_model': 'gpt-4o-mini'
+    },
     'claude': {
         'api_key_env': 'ANTHROPIC_API_KEY',
-        'test_model': 'claude-3-haiku-20240307'
+        'test_model': 'claude-3-5-haiku-20241022'
     }
 }
 
 
-# === FIX 1: Create single FastAPI app instead of mounting sub-apps ===
+# === Lifespan context manager (modern FastAPI pattern) ===
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """Handle startup and shutdown events"""
+    global server_start_time
+    server_start_time = time.time()
+
+    print("🚀 Mental Health Chat Server starting up...")
+
+    # Initialize components with proper async context
+    await initialize_components()
+
+    # Demo mode messaging
+    if DEMO_MODE:
+        print("\n" + "="*60)
+        print("🎭 DEMO MODE ACTIVE")
+        print("="*60)
+        print("⚠️  Demo Mode: Local models have 2-minute timeouts")
+        print("⏱️  Total selection may take up to 3 minutes")
+        print("💡 Tip: Have backup slides ready during model evaluation")
+        print("🎯 Prioritizing completion over speed for presentation")
+        print("="*60)
+
+    print("✅ Server startup complete - ready for connections")
+
+    yield  # Server runs here
+
+    # Shutdown logic (if needed)
+    print("👋 Server shutting down...")
+
+
+# === Create FastAPI app with lifespan ===
 app = FastAPI(
-    title="Mental Health Chat - Conversation Flow",
-    description="Full chat interface with proper conversation flow (fixed version)",
-    version="1.0.0"
+    title="Mental Health Chat - Dynamic Model Selection",
+    description="Compare local vs cloud LLMs using therapeutic evaluation metrics",
+    version="2.0.0",
+    lifespan=lifespan
 )
 
 # Mount static files and templates
@@ -227,20 +266,21 @@ server_start_time = None
 model_selector = None
 session_manager = None
 
-# Models configuration - 3 models for demo (OpenAI disabled - API limit depleted)
+# Models configuration - all 4 models enabled (API credits refilled)
 models_config = {
     'models': {
-        'openai': {'enabled': False, 'cost_per_token': 0.0001, 'model_name': 'gpt-4'},  # Disabled for demo
-        'claude': {'enabled': True, 'cost_per_token': 0.00015, 'model_name': 'claude-3'},
-        'deepseek': {'enabled': True, 'cost_per_token': 0.00005, 'model_name': 'deepseek/deepseek-r1-0528-qwen3-8b'},
-        'gemma': {'enabled': True, 'cost_per_token': 0.00003, 'model_name': 'google/gemma-3-12b'}
+        'openai': {'enabled': True, 'cost_per_token': 0.00015, 'model_name': 'gpt-4o-mini'},
+        'claude': {'enabled': True, 'cost_per_token': 0.00025, 'model_name': 'claude-3-5-haiku-20241022'},
+        'deepseek': {'enabled': True, 'cost_per_token': 0.0, 'model_name': 'deepseek/deepseek-r1-0528-qwen3-8b'},
+        'gemma': {'enabled': True, 'cost_per_token': 0.0, 'model_name': 'google/gemma-3-12b'}
     },
-    'default_model': 'claude',  # Changed default since OpenAI is disabled
-    'selection_timeout': 180.0 if DEMO_MODE else 90.0,  # 3 minutes for demo reliability
+    'default_model': 'openai',
+    'selection_timeout': 180.0 if DEMO_MODE else 90.0,
     'model_timeouts': {
+        'openai': 30.0,
         'claude': 30.0,
-        'deepseek': 120.0 if DEMO_MODE else 45.0,  # 2 minutes for demo
-        'gemma': 120.0 if DEMO_MODE else 50.0      # 2 minutes for demo
+        'deepseek': 120.0 if DEMO_MODE else 60.0,
+        'gemma': 120.0 if DEMO_MODE else 60.0
     },
     'similarity_threshold': 0.9
 }
@@ -280,32 +320,7 @@ async def initialize_components():
     else:
         print("   ⚠️  Some components failed - chat may have limited functionality")
 
-# === FIX 5: Proper startup event with async handling ===
-@app.on_event("startup")
-async def startup_event():
-    """
-    FIX: Proper startup event that handles async initialization correctly
-    """
-    global server_start_time
-    server_start_time = time.time()
-    
-    print("🚀 Mental Health Chat Server starting up...")
-    
-    # Initialize components with proper async context
-    await initialize_components()
-    
-    # Demo mode messaging
-    if DEMO_MODE:
-        print("\n" + "="*60)
-        print("🎭 DEMO MODE ACTIVE")
-        print("="*60)
-        print("⚠️  Demo Mode: Local models have 2-minute timeouts")
-        print("⏱️  Total selection may take up to 3 minutes")
-        print("💡 Tip: Have backup slides ready during model evaluation")
-        print("🎯 Prioritizing completion over speed for presentation")
-        print("="*60)
-    
-    print("✅ Server startup complete - ready for connections")
+# Startup logic moved to lifespan context manager (see above)
 
 # === ROUTE DEFINITIONS (FIX 6: All routes defined directly) ===
 
@@ -347,7 +362,7 @@ async def chat_interface(request: Request):
     config = {
         "enable_streaming": False,  # Disable streaming for basic functionality
         "enable_caching": True,
-        "available_models": ["claude", "deepseek", "gemma"]
+        "available_models": ["openai", "claude", "deepseek", "gemma"]
     }
     
     try:
@@ -389,8 +404,8 @@ async def get_status():
     
     return StatusResponse(
         status=overall_status,
-        version="1.0.0-fixed",
-        available_models=["claude", "deepseek", "gemma"] if model_selector else [],
+        version="2.0.0",
+        available_models=["openai", "claude", "deepseek", "gemma"] if model_selector else [],
         uptime_seconds=uptime
     )
 
@@ -404,24 +419,31 @@ async def get_models_status():
         )
     
     models = {
-        "claude": {
+        "openai": {
             "enabled": True,
             "status": "available",
             "cost_per_token": 0.00015,
-            "model_name": "claude-3",
+            "model_name": "gpt-4o-mini",
+            "specialties": ["information_seeking", "clarity", "general_support"]
+        },
+        "claude": {
+            "enabled": True,
+            "status": "available",
+            "cost_per_token": 0.00025,
+            "model_name": "claude-3-5-haiku-20241022",
             "specialties": ["empathy", "therapeutic", "crisis", "trauma"]
         },
         "deepseek": {
             "enabled": True,
             "status": "available",
-            "cost_per_token": 0.00005,
+            "cost_per_token": 0.0,
             "model_name": "deepseek/deepseek-r1-0528-qwen3-8b",
-            "specialties": ["information_seeking", "general_support", "analysis"]
+            "specialties": ["analysis", "reasoning", "general_support"]
         },
         "gemma": {
             "enabled": True,
             "status": "available",
-            "cost_per_token": 0.00003,
+            "cost_per_token": 0.0,
             "model_name": "google/gemma-3-12b",
             "specialties": ["general_support", "relationship", "wellness"]
         }
@@ -429,7 +451,7 @@ async def get_models_status():
 
     return ModelStatusResponse(
         models=models,
-        total_available=len(models)  # Now 3 models
+        total_available=len(models)  # All 4 models
     )
 
 
@@ -783,7 +805,8 @@ if __name__ == "__main__":
     print("   ✅ Model selection and continuation flow")
     print()
     print("✨ FEATURES:")
-    print("   • First message: Intelligent model selection across 4 models")
+    print("   • First message: Intelligent model selection across all 4 models")
+    print("   • Models: OpenAI GPT-4o-mini, Claude 3.5 Haiku, DeepSeek R1, Gemma 3")
     print("   • Continued conversation: Same model persistence")
     print("   • Chat history with bubbles (user/assistant)")
     print("   • New conversation button to reset")
