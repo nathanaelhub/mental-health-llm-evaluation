@@ -109,7 +109,7 @@ SCENARIOS = [
 ]
 
 
-def get_model_client(model_name: str):
+def get_model_client(model_name: str, timeout: float = 60.0):
     """Get the appropriate model client."""
     clients = {
         'openai': OpenAIClient,
@@ -119,6 +119,10 @@ def get_model_client(model_name: str):
     }
     if model_name not in clients:
         raise ValueError(f"Unknown model: {model_name}")
+
+    # Local models need longer timeout for JIT loading
+    if model_name in ['deepseek', 'gemma']:
+        return clients[model_name](timeout=timeout)
     return clients[model_name]()
 
 
@@ -181,10 +185,32 @@ Never diagnose conditions or replace professional help."""
         )
 
 
+async def warmup_model(model_name: str, timeout: float = 180.0):
+    """Send a warmup request to pre-load the model (for JIT loading)."""
+    print(f"  Warming up {model_name}...", end=" ", flush=True)
+    try:
+        client = get_model_client(model_name, timeout=timeout)
+        response = await client.generate_response(
+            prompt="Hello",
+            system_prompt="Respond briefly."
+        )
+        if response.content:
+            print(f"ready ({response.response_time_ms/1000:.1f}s)")
+            return True
+        else:
+            print(f"empty response")
+            return False
+    except Exception as e:
+        print(f"failed: {e}")
+        return False
+
+
 async def run_evaluation(
     models: List[str],
     scenarios: List[Dict],
-    evaluator: TherapeuticEvaluator
+    evaluator: TherapeuticEvaluator,
+    warmup: bool = False,
+    local_timeout: float = 180.0
 ) -> List[EvaluationResult]:
     """Run evaluation across all models and scenarios."""
 
@@ -192,13 +218,21 @@ async def run_evaluation(
     total = len(models) * len(scenarios)
     current = 0
 
+    # Warmup local models if requested
+    if warmup:
+        local_models = [m for m in models if m in ['deepseek', 'gemma']]
+        for model_name in local_models:
+            await warmup_model(model_name, timeout=local_timeout)
+
     for scenario in scenarios:
         for model_name in models:
             current += 1
             print(f"  [{current}/{total}] {model_name} on {scenario['id']}...", end=" ", flush=True)
 
             try:
-                client = get_model_client(model_name)
+                # Use longer timeout for local models
+                timeout = local_timeout if model_name in ['deepseek', 'gemma'] else 60.0
+                client = get_model_client(model_name, timeout=timeout)
                 result = await evaluate_model(model_name, client, scenario, evaluator)
                 results.append(result)
 
@@ -360,6 +394,17 @@ Examples:
         default="results",
         help="Output directory (default: results)"
     )
+    parser.add_argument(
+        "--warmup",
+        action="store_true",
+        help="Warmup local models before evaluation (for JIT loading)"
+    )
+    parser.add_argument(
+        "--local-timeout",
+        type=int,
+        default=180,
+        help="Timeout in seconds for local models (default: 180)"
+    )
 
     args = parser.parse_args()
 
@@ -368,8 +413,8 @@ Examples:
     valid_models = ['openai', 'claude', 'deepseek', 'gemma']
     models = [m for m in models if m in valid_models]
 
-    if len(models) < 2:
-        print("Error: Need at least 2 valid models for comparison")
+    if len(models) < 1:
+        print("Error: Need at least 1 valid model")
         print(f"Valid models: {', '.join(valid_models)}")
         sys.exit(1)
 
@@ -392,7 +437,11 @@ Examples:
 
     # Run evaluation
     print("\nRunning evaluations:\n")
-    results = asyncio.run(run_evaluation(models, scenarios, evaluator))
+    results = asyncio.run(run_evaluation(
+        models, scenarios, evaluator,
+        warmup=args.warmup,
+        local_timeout=args.local_timeout
+    ))
 
     # Analyze results
     print("\nAnalyzing results...")
