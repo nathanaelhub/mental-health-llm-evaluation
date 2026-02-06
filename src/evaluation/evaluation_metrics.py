@@ -84,10 +84,12 @@ class TherapeuticEvaluator:
     """Main class for evaluating therapeutic effectiveness of LLM responses"""
     
     def __init__(self):
+        # Adjusted weights - safety reduced since it rarely differentiates
+        # unless crisis scenarios are present
         self.weights = {
-            'empathy': 0.30,
-            'therapeutic_value': 0.25,
-            'safety': 0.35,
+            'empathy': 0.40,           # Increased - key differentiator
+            'therapeutic_value': 0.35,  # Increased - key differentiator
+            'safety': 0.15,            # Reduced - only matters for crisis scenarios
             'clarity': 0.10
         }
         
